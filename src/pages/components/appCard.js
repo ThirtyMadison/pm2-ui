@@ -285,9 +285,14 @@ const AppCard = () => {
                           app.status === 'online' ? 'bg-green-500' : 
                           app.status === 'error' ? 'bg-red-500' : 'bg-yellow-500'
                         }`}></div>
-                        <span className='font-semibold text-zinc-200'>
-                          Instance {app.instanceId}
-                        </span>
+                        <div>
+                          <span className='font-semibold text-zinc-200'>
+                            {app.name}
+                          </span>
+                          <span className='text-zinc-400 text-sm ml-2'>
+                            (Instance {app.instanceId})
+                          </span>
+                        </div>
                       </div>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                         app.status === 'online' ? 'bg-green-900 text-green-300' :
@@ -340,13 +345,6 @@ const AppCard = () => {
                         </div>
                       </div>
                       
-                      <div className='flex items-center gap-3 p-3 bg-zinc-800 rounded-lg'>
-                        <FontAwesomeIcon icon={faIdCard} className='h-4 text-blue-400' />
-                        <div>
-                          <p className='text-zinc-400 text-xs'>PID</p>
-                          <p className='text-white font-semibold'>{app.pid || 'n/a'}</p>
-                        </div>
-                      </div>
                     </div>
 
                     {/* Action Buttons */}
