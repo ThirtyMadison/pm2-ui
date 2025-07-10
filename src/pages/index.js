@@ -2,7 +2,7 @@ import AppCard from './components/appCard';
 import Footer from './components/footer';
 import Navbar from './components/nav';
 
-export default function Home({ session }) {
+export default function Home() {
   return (
     <>
       <div className='min-h-screen bg-zinc-900 pt-14'>
