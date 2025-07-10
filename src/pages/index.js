@@ -9,7 +9,7 @@ export default function Home() {
       <div className='min-h-screen bg-zinc-900 pt-14'>
         <Navbar />
         <div className='flex flex-col items-center justify-center align-middle px-4'>
-          <div className='max-w-6xl w-full'>
+          <div className='max-w-7xl w-full'>
             <EngToolkitToolbar />
             <AppCard />
           </div>

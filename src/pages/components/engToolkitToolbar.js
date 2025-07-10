@@ -202,7 +202,7 @@ const EngToolkitToolbar = () => {
   };
 
   return (
-    <div className="bg-zinc-800 rounded-xl shadow-lg border border-zinc-700 p-6 mb-6">
+    <div className="bg-zinc-800 rounded-xl shadow-lg border border-zinc-700 p-6 my-6">
       <h2 className="text-2xl font-bold text-white mb-6">Eng Toolkit</h2>
       
       {/* Action Selection */}
