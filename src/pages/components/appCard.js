@@ -126,7 +126,15 @@ const AppCard = () => {
 
   const filteredGroupNames = Object.keys(groupedApps).filter((groupName) =>
     groupName.toLowerCase().includes(filter)
-  );
+  ).sort((a, b) => {
+    // Put infrastructure services at the bottom
+    const aIsInfra = ['pm2-logrotate', 'redis', 'rabbitmq', 'zookeeper', 'kafka'].includes(a);
+    const bIsInfra = ['pm2-logrotate', 'redis', 'rabbitmq', 'zookeeper', 'kafka'].includes(b);
+    
+    if (aIsInfra && !bIsInfra) return 1; // a goes after b
+    if (!aIsInfra && bIsInfra) return -1; // a goes before b
+    return a.localeCompare(b); // alphabetical for same type
+  });
 
   const pm2AppAction = async (appName, action) => {
     try {
@@ -243,7 +251,7 @@ const AppCard = () => {
       </div>
 
       {/* Service Groups Grid */}
-      <div className='grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6 pb-6'>
+      <div className='grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 pb-6'>
         {filteredGroupNames.map((groupName) => {
           const visibleApps = groupedApps[groupName].filter(toggleVisibility);
           if (visibleApps.length === 0) return null;
@@ -251,14 +259,13 @@ const AppCard = () => {
           return (
             <div
               key={groupName}
-              className={`rounded-xl shadow-lg border overflow-hidden ${
+              className={`rounded-lg shadow-md border overflow-hidden ${
                 (() => {
                   const engService = getEngStatusForService(groupName);
                   if (engService) {
                     if (engService.isInfrastructure) {
                       return 'bg-zinc-800 border-zinc-700'; // Neutral for infrastructure
                     }
-                    if (engService.health === 'healthy') return 'bg-green-900 border-green-600';
                     if (engService.health === 'unhealthy') return 'bg-red-900 border-red-600';
                   }
                   return 'bg-zinc-800 border-zinc-700';
@@ -266,22 +273,22 @@ const AppCard = () => {
               }`}
             >
               {/* Service Header */}
-              <div className='p-6 border-b border-zinc-600'>
+              <div className='p-4 border-b border-zinc-600'>
                 <div className='flex items-center justify-between'>
                   <div className='flex items-center gap-3'>
                     <div className='p-2 bg-zinc-700 rounded-lg'>
-                      <FontAwesomeIcon icon={faCube} className='h-6 text-blue-400' />
+                      <FontAwesomeIcon icon={faCube} className='h-5 text-blue-400' />
                     </div>
                     <div>
-                      <h3 className='text-xl font-bold text-white'>{groupName}</h3>
-                      <div className='flex items-center gap-4 text-sm'>
+                      <h3 className='text-lg font-semibold text-white'>{groupName}</h3>
+                      <div className='flex items-center gap-3 text-sm'>
                         <p className='text-zinc-400'>
-                          {visibleApps.length} PM2 instance{visibleApps.length !== 1 ? 's' : ''}
+                          {visibleApps.length} instance{visibleApps.length !== 1 ? 's' : ''}
                         </p>
                         {loadingEngStatus ? (
                           <div className='flex items-center gap-2'>
-                            <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500'></div>
-                            <span className='text-zinc-400 text-xs'>Loading eng status...</span>
+                            <div className='animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500'></div>
+                            <span className='text-zinc-400 text-xs'>Loading...</span>
                           </div>
                         ) : (
                           (() => {
@@ -289,33 +296,19 @@ const AppCard = () => {
                             if (engService) {
                               if (engService.isInfrastructure) {
                                 return (
-                                  <div className='flex items-center gap-2'>
-                                    <span className='px-2 py-1 rounded text-xs font-medium bg-zinc-700 text-zinc-300'>
-                                      Infrastructure
-                                    </span>
-                                    {engService.uptime && (
-                                      <span className='text-zinc-300 text-xs'>
-                                        {engService.uptime}
-                                      </span>
-                                    )}
-                                  </div>
+                                  <span className='px-2 py-1 rounded text-xs font-medium bg-zinc-700 text-zinc-300'>
+                                    Infrastructure
+                                  </span>
                                 );
                               }
                               return (
-                                <div className='flex items-center gap-2'>
-                                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                    engService.health === 'healthy' ? 'bg-green-700 text-green-200' :
-                                    engService.health === 'unhealthy' ? 'bg-red-700 text-red-200' :
-                                    'bg-yellow-700 text-yellow-200'
-                                  }`}>
-                                    {engService.health}
-                                  </span>
-                                  {engService.port && (
-                                    <span className='text-zinc-300 text-xs'>
-                                      Port {engService.port}
-                                    </span>
-                                  )}
-                                </div>
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                  engService.health === 'healthy' ? 'bg-green-700 text-green-200' :
+                                  engService.health === 'unhealthy' ? 'bg-red-700 text-red-200' :
+                                  'bg-yellow-700 text-yellow-200'
+                                }`}>
+                                  {engService.health}
+                                </span>
                               );
                             }
                             return null;
@@ -324,94 +317,39 @@ const AppCard = () => {
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Group Actions */}
-                  <div className='flex gap-2 flex-wrap'>
-                    <button
-                      className='p-2 bg-zinc-700 hover:bg-zinc-600 rounded-lg transition-colors'
-                      onClick={() => pm2AppAction(groupName, 'delete')}
-                      title='Kill all instances'
-                    >
-                      <FontAwesomeIcon icon={faSkull} className='h-4 text-red-400' />
-                    </button>
-                  </div>
                 </div>
                 
-                {/* Eng Status Details */}
+                {/* Eng Status Details - Simplified */}
                 {!loadingEngStatus && (() => {
                   const engService = getEngStatusForService(groupName);
-                  if (engService) {
-                    if (engService.isInfrastructure) {
-                      return (
-                        <div className='mt-4 p-3 bg-zinc-900 rounded-lg border border-zinc-600'>
-                          <div className='text-xs text-zinc-400'>
-                            <span className='text-zinc-500'>Uptime:</span> {engService.uptime || 'Unknown'}
-                          </div>
-                        </div>
-                      );
-                    }
+                  if (engService && !engService.isInfrastructure) {
                     return (
-                      <div className='mt-4 p-3 bg-zinc-900 rounded-lg border border-zinc-600'>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-3 text-xs'>
+                      <div className='mt-3 p-2 bg-zinc-900 rounded border border-zinc-600'>
+                        <div className='grid grid-cols-2 gap-2 text-xs'>
                           {engService.commitMessage && (
                             <div className='text-zinc-400 truncate' title={engService.commitMessage}>
                               <span className='text-zinc-500'>Commit:</span> {engService.commitMessage}
                             </div>
                           )}
                           
-                          {engService.sha && (
-                            <div className='text-zinc-400'>
-                              <span className='text-zinc-500'>SHA:</span> {engService.sha}
-                            </div>
-                          )}
-                          
-                          {engService.uptime && (
-                            <div className='text-zinc-400'>
-                              <span className='text-zinc-500'>Uptime:</span> {engService.uptime}
-                            </div>
-                          )}
-                          
-                          {engService.url && engService.url !== 'None' && (
-                            <div className='text-blue-400'>
-                              <a 
-                                href={engService.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className='hover:underline'
-                              >
-                                {engService.url}
-                              </a>
-                            </div>
-                          )}
-                          
-                          {/* Health Status Breakdown */}
+                          {/* Health Status - Simplified */}
                           <div className='col-span-2'>
-                            <div className='flex gap-4 text-zinc-400'>
-                              <span className={`px-2 py-1 rounded text-xs ${
-                                engService.health === 'healthy' ? 'bg-green-700 text-green-200' :
-                                engService.health === 'unhealthy' ? 'bg-red-700 text-red-200' :
-                                'bg-yellow-700 text-yellow-200'
-                              }`}>
-                                <span className='text-zinc-300'>Resolvers:</span> {engService.health}
-                              </span>
-                              
-                              {engService.consumers && (
-                                <span className={`px-2 py-1 rounded text-xs ${
+                            <div className='flex gap-2 text-zinc-400'>
+                              {engService.consumers && ['healthy', 'unhealthy'].includes(engService.consumers) && (
+                                <span className={`px-1.5 py-0.5 rounded text-xs ${
                                   engService.consumers === 'healthy' ? 'bg-green-700 text-green-200' :
-                                  engService.consumers === 'unhealthy' ? 'bg-red-700 text-red-200' :
-                                  'bg-yellow-700 text-yellow-200'
+                                  'bg-red-700 text-red-200'
                                 }`}>
-                                  <span className='text-zinc-300'>Consumers:</span> {engService.consumers}
+                                  Consumers: {engService.consumers}
                                 </span>
                               )}
                               
-                              {engService.jobs && (
-                                <span className={`px-2 py-1 rounded text-xs ${
+                              {engService.jobs && ['healthy', 'unhealthy'].includes(engService.jobs) && (
+                                <span className={`px-1.5 py-0.5 rounded text-xs ${
                                   engService.jobs === 'healthy' ? 'bg-green-700 text-green-200' :
-                                  engService.jobs === 'unhealthy' ? 'bg-red-700 text-red-200' :
-                                  'bg-yellow-700 text-yellow-200'
+                                  'bg-red-700 text-red-200'
                                 }`}>
-                                  <span className='text-zinc-300'>Jobs:</span> {engService.jobs}
+                                  Jobs: {engService.jobs}
                                 </span>
                               )}
                             </div>
@@ -425,26 +363,24 @@ const AppCard = () => {
               </div>
 
               {/* Instances */}
-              <div className='p-6 space-y-4'>
+              <div className='p-4 space-y-3'>
                 {visibleApps.map((app, index) => (
                   <div
                     key={app.instanceId}
-                    className='bg-zinc-900 rounded-lg p-4 border border-zinc-600 hover:border-zinc-500 transition-colors'
+                    className='bg-zinc-900 rounded border border-zinc-600 hover:border-zinc-500 transition-colors'
                   >
                     {/* Instance Header */}
-                    <div className='flex items-center justify-between mb-4'>
-                      <div className='flex items-center gap-3'>
-                        <div className={`w-3 h-3 rounded-full ${
+                    <div className='flex items-center justify-between p-3 border-b border-zinc-700'>
+                      <div className='flex items-center gap-2'>
+                        <div className={`w-2 h-2 rounded-full ${
                           app.status === 'online' ? 'bg-green-500' : 
                           app.status === 'error' ? 'bg-red-500' : 'bg-yellow-500'
                         }`}></div>
-                        <div>
-                          <span className='font-semibold text-zinc-200'>
-                            {app.name}
-                          </span>
-                        </div>
+                        <span className='font-medium text-zinc-200 text-sm'>
+                          {app.name}
+                        </span>
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                         app.status === 'online' ? 'bg-green-900 text-green-300' :
                         app.status === 'error' ? 'bg-red-900 text-red-300' :
                         'bg-yellow-900 text-yellow-300'
@@ -453,92 +389,91 @@ const AppCard = () => {
                       </span>
                     </div>
 
-                    {/* Metrics Grid */}
-                    <div className='grid grid-cols-2 gap-4 mb-4'>
-                      <div className='flex items-center gap-3 p-3 bg-zinc-800 rounded-lg'>
+                    {/* Metrics Grid - Simplified */}
+                    <div className='grid grid-cols-3 gap-2 p-3'>
+                      <div className='flex items-center gap-2 p-2 bg-zinc-800 rounded'>
                         <FontAwesomeIcon
                           icon={faMicrochip}
-                          className={`h-4 ${getColorClass(app.cpu, {
+                          className={`h-3 ${getColorClass(app.cpu, {
                             green: 50,
                             yellow: 70,
                             orange: 85,
                           })}`}
                         />
-                        <div>
-                          <p className='text-zinc-400 text-xs'>CPU</p>
-                          <p className='text-white font-semibold'>{app.cpu}%</p>
+                        <div className='text-xs'>
+                          <p className='text-zinc-400'>CPU</p>
+                          <p className='text-white font-medium'>{app.cpu}%</p>
                         </div>
                       </div>
                       
-                      <div className='flex items-center gap-3 p-3 bg-zinc-800 rounded-lg'>
+                      <div className='flex items-center gap-2 p-2 bg-zinc-800 rounded'>
                         <FontAwesomeIcon
                           icon={faMemory}
-                          className={`h-4 ${getColorClass(app.memory, {
+                          className={`h-3 ${getColorClass(app.memory, {
                             green: 50000000,
                             yellow: 10000000,
                             orange: 150000000,
                           })}`}
                         />
-                        <div>
-                          <p className='text-zinc-400 text-xs'>Memory</p>
-                          <p className='text-white font-semibold'>
-                            {(app.memory / (1024 * 1024)).toFixed(2)} MB
+                        <div className='text-xs'>
+                          <p className='text-zinc-400'>Memory</p>
+                          <p className='text-white font-medium'>
+                            {(app.memory / (1024 * 1024)).toFixed(1)} MB
                           </p>
                         </div>
                       </div>
                       
-                      <div className='flex items-center gap-3 p-3 bg-zinc-800 rounded-lg'>
-                        <FontAwesomeIcon icon={faClock} className='h-4 text-blue-400' />
-                        <div>
-                          <p className='text-zinc-400 text-xs'>Uptime</p>
-                          <p className='text-white font-semibold'>{app.uptime || 'n/a'}</p>
+                      <div className='flex items-center gap-2 p-2 bg-zinc-800 rounded'>
+                        <FontAwesomeIcon icon={faClock} className='h-3 text-blue-400' />
+                        <div className='text-xs'>
+                          <p className='text-zinc-400'>Uptime</p>
+                          <p className='text-white font-medium'>{app.uptime || 'n/a'}</p>
                         </div>
                       </div>
-                      
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className='flex gap-2 flex-wrap'>
+                    {/* Action Buttons - Simplified */}
+                    <div className='flex gap-1 p-3 pt-0'>
                       {app.status === 'online' ? (
                         <>
                           <button
-                            className='flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-white text-sm font-medium'
+                            className='flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-blue-600 hover:bg-blue-700 rounded text-white text-xs font-medium'
                             onClick={() => pm2AppAction(app.name, 'reload')}
                           >
-                            <FontAwesomeIcon icon={faSyncAlt} className='h-4' />
+                            <FontAwesomeIcon icon={faSyncAlt} className='h-3' />
                             Reload
                           </button>
                           
                           <button
-                            className='flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors text-white text-sm font-medium'
+                            className='flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-orange-600 hover:bg-orange-700 rounded text-white text-xs font-medium'
                             onClick={() => pm2AppAction(app.name, 'restart')}
                           >
-                            <FontAwesomeIcon icon={faRecycle} className='h-4' />
+                            <FontAwesomeIcon icon={faRecycle} className='h-3' />
                             Restart
                           </button>
                           
                           <button
-                            className='flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-zinc-700 hover:bg-zinc-600 rounded-lg transition-colors text-white text-sm font-medium'
+                            className='flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-zinc-700 hover:bg-zinc-600 rounded text-white text-xs font-medium'
                             onClick={() => pm2AppAction(app.name, 'stop')}
                           >
-                            <FontAwesomeIcon icon={faStop} className='h-4' />
+                            <FontAwesomeIcon icon={faStop} className='h-3' />
                             Stop
                           </button>
                           
                           <Link
                             href={`/logs/${encodeURIComponent(app.name)}?index=${app.index || 0}`}
-                            className='flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-zinc-700 hover:bg-zinc-600 rounded-lg transition-colors text-white text-sm font-medium'
+                            className='flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-zinc-700 hover:bg-zinc-600 rounded text-white text-xs font-medium'
                           >
-                            <FontAwesomeIcon icon={faTerminal} className='h-4' />
+                            <FontAwesomeIcon icon={faTerminal} className='h-3' />
                             Logs
                           </Link>
                         </>
                       ) : (
                         <button
-                          className='flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-green-600 hover:bg-green-700 rounded-lg transition-colors text-white text-sm font-medium'
+                          className='flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-green-600 hover:bg-green-700 rounded text-white text-xs font-medium'
                           onClick={() => pm2AppAction(app.name, 'start')}
                         >
-                          <FontAwesomeIcon icon={faPlayCircle} className='h-4' />
+                          <FontAwesomeIcon icon={faPlayCircle} className='h-3' />
                           Start
                         </button>
                       )}

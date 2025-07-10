@@ -90,8 +90,24 @@ function parseEngStatus(output) {
     
     if (isInfrastructureService) {
       // Infrastructure services are on single lines
+      // Look for uptime pattern that might be split across lines
       const uptimeMatch = trimmedLine.match(/(\d+ days?, \d+:\d+:\d+ hrs?)/);
-      const uptime = uptimeMatch ? uptimeMatch[1] : '';
+      let uptime = uptimeMatch ? uptimeMatch[1] : '';
+      
+      // If uptime is incomplete, look for it in the next few lines
+      if (!uptime && trimmedLine.includes('days')) {
+        // Try to find the complete uptime pattern
+        const uptimePattern = /(\d+ days?, \d+:\d+:\d+)/;
+        const match = trimmedLine.match(uptimePattern);
+        if (match) {
+          uptime = match[1] + ' hrs';
+        }
+      }
+      
+      // Extract port - look for a 4-digit number that's likely a port
+      const portMatch = trimmedLine.match(/\b(\d{4})\b/);
+      const port = portMatch ? portMatch[1] : '';
+      
       const serviceName = trimmedLine.split(/\s+/)[0];
       
       services.push({
@@ -103,7 +119,7 @@ function parseEngStatus(output) {
         consumers: '',
         jobs: '',
         uptime: uptime,
-        port: '',
+        port: port,
         url: '',
         details: [],
         isInfrastructure: true
@@ -150,11 +166,41 @@ function parseEngStatus(output) {
       
       // Parse the parts after SHA: HEALTH CONSUMERS JOBS UPTIME PORT URL
       const health = afterShaParts[0] || 'unknown';
-      const consumers = afterShaParts[1] || '';
-      const jobs = afterShaParts[2] || '';
-      const uptime = afterShaParts[3] || '';
-      const port = afterShaParts[4] || '';
-      const url = afterShaParts.slice(5).join(' ') || '';
+      
+      // Only set consumers/jobs if they are valid health values
+      let consumers = '';
+      let jobs = '';
+      
+      if (afterShaParts[1] && ['healthy', 'unhealthy'].includes(afterShaParts[1])) {
+        consumers = afterShaParts[1];
+      }
+      
+      if (afterShaParts[2] && ['healthy', 'unhealthy'].includes(afterShaParts[2])) {
+        jobs = afterShaParts[2];
+      }
+      
+      // Extract uptime - look for pattern like "0 days, 3:16:47 hrs"
+      let uptime = '';
+      let port = '';
+      let url = '';
+      
+      // Find uptime pattern in the full line
+      const uptimeMatch = allLines.match(/(\d+ days?, \d+:\d+:\d+ hrs?)/);
+      if (uptimeMatch) {
+        uptime = uptimeMatch[1];
+      }
+      
+      // Extract port - look for a 4-digit number
+      const portMatch = allLines.match(/\b(\d{4})\b/);
+      if (portMatch) {
+        port = portMatch[1];
+      }
+      
+      // Extract URL - look for http/https links
+      const urlMatch = allLines.match(/(https?:\/\/[^\s]+)/);
+      if (urlMatch) {
+        url = urlMatch[1];
+      }
       
       // Extract commit message (everything between service name and SHA)
       const beforeSha = allLines.substring(group.serviceName.length, shaIndex).trim();
