@@ -20,23 +20,30 @@ export default function handler(req, res) {
     return;
   }
 
-  pm2.connect((err) => {
+  const onConnect = (err) => {
     if (err) {
       console.error('PM2 connect error:', err);
       res.status(500).send('Could not connect to PM2');
       return;
     }
 
+    onAction();
+  }
+
+  const onAction = (err) => {
     pm2[action](appName, (err, proc) => {
       pm2.disconnect();
+
       if (err) {
         console.error(`PM2 ${action} error:`, err);
         res.status(500).send(`Failed to ${action} app ${appName}`);
         return;
       }
       res
-        .status(200)
-        .json({ message: `Successfully ${action}ed app ${appName}` });
+          .status(200)
+          .json({ message: `Successfully ${action}ed app ${appName}` });
     });
-  });
+  }
+
+  pm2.connect(onConnect);
 }
