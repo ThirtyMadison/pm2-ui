@@ -14,7 +14,7 @@ const Navbar = ({ onEngToolkitToolbarToggle, isEngToolkitToolbarEnabled }) => {
         </Link>
 
         <button
-          className='p-1 px-3 flex h-min items-center font-bold text-white rounded-md bg-gradient-to-r from-zinc-600 to-zinc-700 hover:bg-blue-300'
+          className='p-1 px-3 flex h-min items-center font-medium text-white rounded-md bg-gradient-to-r from-zinc-600 to-zinc-700 hover:bg-blue-300'
           onClick={() => {
             if (!isEngToolkitToolbarEnabled) {
               window.scrollTo({ top: 0, behavior: 'smooth' });
