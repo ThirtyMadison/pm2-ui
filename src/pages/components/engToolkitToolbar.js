@@ -198,11 +198,11 @@ const EngToolkitToolbar = () => {
         </select>
       </div>
 
-      {/* Services Selection */}
-      {(selectedAction === 'download-db' || ['setup', 'pull-latest', 'update-env-files', 'build', 'migrate', 'refresh-env', 'start'].includes(selectedAction)) && (
+      {/* Services Selection - Only for download-db */}
+      {selectedAction === 'download-db' && (
         <div className="mb-6">
           <label className="block text-sm font-medium text-zinc-200 mb-2">
-            {selectedAction === 'download-db' ? 'Select Services (Required)' : 'Select Services (Optional)'}
+            Select Services (Required)
           </label>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-60 overflow-y-auto border border-zinc-600 rounded-lg p-3 bg-zinc-900">
             {LOCAL_SERVICE_NAMES.map(service => (

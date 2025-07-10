@@ -76,7 +76,7 @@ export default function handler(req, res) {
     }
   });
 
-  const cwd = process.env.HOME;
+  const cwd = process.env.SERVICES_DIR?.length ? `${os.homedir()}${process.env.SERVICES_DIR}` : process.env.HOME;
   
   // Build the full command - try to find eng command first
   const fullCommand = `eng ${args.join(' ')}`;
