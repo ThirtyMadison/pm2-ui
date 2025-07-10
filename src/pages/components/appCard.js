@@ -312,7 +312,7 @@ const AppCard = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className='flex gap-2'>
+                    <div className='flex gap-2 flex-wrap'>
                       {app.status === 'online' ? (
                         <>
                           <button
