@@ -1,13 +1,8 @@
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Popover, Switch } from '@headlessui/react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faClock,
   faCog,
   faCube,
   faFilter,
-  faIdCard,
   faMemory,
   faMicrochip,
   faPlayCircle,
@@ -15,8 +10,12 @@ import {
   faSkull,
   faStop,
   faSyncAlt,
-  faTerminal,
+  faTerminal
 } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Popover, Switch } from '@headlessui/react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 
 const AppCard = () => {
@@ -213,12 +212,6 @@ const AppCard = () => {
                   >
                     <div className='flex flex-col'>
                       <div className='flex items-center justify-between gap-6 py-1.5 mb-2 rounded-md'>
-                        <p className='flex items-center gap-2 text-xl font-bold'>
-                          {' '}
-                          <span className='font-bold text-zinc-300 min-w-max'>
-                            Instance [ {app.instanceId} ]
-                          </span>
-                        </p>
                         <span
                           className={`badge ${
                             app.status === 'online'
@@ -301,28 +294,6 @@ const AppCard = () => {
                           </span>
                           <span className='font-bold text-zinc-100'>
                             {app.uptime || 'n/a'}
-                          </span>
-                        </p>
-                        <p
-                          className={`${
-                            index === 1 ? 'md:flex-row-reverse' : 'flex'
-                          } flex items-center gap-2 w-full justify-between`}
-                        >
-                          {' '}
-                          <span
-                            className={`${
-                              index === 1 ? 'md:flex-row-reverse' : 'flex'
-                            } flex gap-2`}
-                          >
-                            {' '}
-                            <FontAwesomeIcon
-                              icon={faIdCard}
-                              className='h-5 text-amber-50'
-                            />
-                            <span className='text-zinc-400'>PID</span>
-                          </span>
-                          <span className='font-bold text-zinc-100'>
-                            {app.pid || 'n/a'}
                           </span>
                         </p>
                       </div>
