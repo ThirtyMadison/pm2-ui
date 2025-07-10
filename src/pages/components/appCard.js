@@ -25,6 +25,8 @@ const AppCard = () => {
   const [showOnline, setShowOnline] = useState(true);
   const [showError, setShowError] = useState(true);
   const [showStopped, setShowStopped] = useState(true);
+  const [engStatus, setEngStatus] = useState(null);
+  const [loadingEngStatus, setLoadingEngStatus] = useState(true);
 
   const toggleVisibility = (app) => {
     return (
@@ -46,6 +48,20 @@ const AppCard = () => {
     return appName;
   };
 
+  // Function to get eng status for a service
+  const getEngStatusForService = (serviceName) => {
+    if (!engStatus || !engStatus.services) return null;
+    console.log('Looking for service:', serviceName);
+    console.log('Available services:', engStatus.services.map(s => s.name));
+    const found = engStatus.services.find(service => 
+      service.name === serviceName || 
+      serviceName.includes(service.name) ||
+      service.name.includes(serviceName)
+    );
+    console.log('Found service:', found);
+    return found;
+  };
+
   useEffect(() => {
     async function fetchApps() {
       const res = await fetch('/api/pm2/apps');
@@ -61,12 +77,39 @@ const AppCard = () => {
       setGroupedApps(grouped);
     }
 
-    fetchApps();
+    async function fetchEngStatus() {
+      try {
+        setLoadingEngStatus(true);
+        const res = await fetch('/api/engToolkit/status');
+        const data = await res.json();
+        if (data.success) {
+          setEngStatus(data.data);
+          console.log(data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch eng status:', error);
+      } finally {
+        setLoadingEngStatus(false);
+      }
+    }
 
-    const intervalId = setInterval(() => {
+    // Initial fetch
+    fetchApps();
+    fetchEngStatus();
+
+    // Set up intervals
+    const pm2IntervalId = setInterval(() => {
       fetchApps();
-    }, 5000);
-    return () => clearInterval(intervalId);
+    }, 5000); // PM2 data every 5 seconds
+
+    const engIntervalId = setInterval(() => {
+      fetchEngStatus();
+    }, 120000); // Eng status every 2 minutes (120 seconds)
+
+    return () => {
+      clearInterval(pm2IntervalId);
+      clearInterval(engIntervalId);
+    };
   }, []);
 
   if (apps.length === 0) {
@@ -208,7 +251,19 @@ const AppCard = () => {
           return (
             <div
               key={groupName}
-              className='bg-zinc-800 rounded-xl shadow-lg border border-zinc-700 overflow-hidden'
+              className={`rounded-xl shadow-lg border overflow-hidden ${
+                (() => {
+                  const engService = getEngStatusForService(groupName);
+                  if (engService) {
+                    if (engService.isInfrastructure) {
+                      return 'bg-zinc-800 border-zinc-700'; // Neutral for infrastructure
+                    }
+                    if (engService.health === 'healthy') return 'bg-green-900 border-green-600';
+                    if (engService.health === 'unhealthy') return 'bg-red-900 border-red-600';
+                  }
+                  return 'bg-zinc-800 border-zinc-700';
+                })()
+              }`}
             >
               {/* Service Header */}
               <div className='p-6 border-b border-zinc-600'>
@@ -219,9 +274,54 @@ const AppCard = () => {
                     </div>
                     <div>
                       <h3 className='text-xl font-bold text-white'>{groupName}</h3>
-                      <p className='text-zinc-400 text-sm'>
-                        {visibleApps.length} instance{visibleApps.length !== 1 ? 's' : ''}
-                      </p>
+                      <div className='flex items-center gap-4 text-sm'>
+                        <p className='text-zinc-400'>
+                          {visibleApps.length} PM2 instance{visibleApps.length !== 1 ? 's' : ''}
+                        </p>
+                        {loadingEngStatus ? (
+                          <div className='flex items-center gap-2'>
+                            <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500'></div>
+                            <span className='text-zinc-400 text-xs'>Loading eng status...</span>
+                          </div>
+                        ) : (
+                          (() => {
+                            const engService = getEngStatusForService(groupName);
+                            if (engService) {
+                              if (engService.isInfrastructure) {
+                                return (
+                                  <div className='flex items-center gap-2'>
+                                    <span className='px-2 py-1 rounded text-xs font-medium bg-zinc-700 text-zinc-300'>
+                                      Infrastructure
+                                    </span>
+                                    {engService.uptime && (
+                                      <span className='text-zinc-300 text-xs'>
+                                        {engService.uptime}
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              }
+                              return (
+                                <div className='flex items-center gap-2'>
+                                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                    engService.health === 'healthy' ? 'bg-green-700 text-green-200' :
+                                    engService.health === 'unhealthy' ? 'bg-red-700 text-red-200' :
+                                    'bg-yellow-700 text-yellow-200'
+                                  }`}>
+                                    {engService.health}
+                                  </span>
+                                  {engService.port && (
+                                    <span className='text-zinc-300 text-xs'>
+                                      Port {engService.port}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()
+                        )}
+                      </div>
                     </div>
                   </div>
                   
@@ -236,6 +336,92 @@ const AppCard = () => {
                     </button>
                   </div>
                 </div>
+                
+                {/* Eng Status Details */}
+                {!loadingEngStatus && (() => {
+                  const engService = getEngStatusForService(groupName);
+                  if (engService) {
+                    if (engService.isInfrastructure) {
+                      return (
+                        <div className='mt-4 p-3 bg-zinc-900 rounded-lg border border-zinc-600'>
+                          <div className='text-xs text-zinc-400'>
+                            <span className='text-zinc-500'>Uptime:</span> {engService.uptime || 'Unknown'}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className='mt-4 p-3 bg-zinc-900 rounded-lg border border-zinc-600'>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-3 text-xs'>
+                          {engService.commitMessage && (
+                            <div className='text-zinc-400 truncate' title={engService.commitMessage}>
+                              <span className='text-zinc-500'>Commit:</span> {engService.commitMessage}
+                            </div>
+                          )}
+                          
+                          {engService.sha && (
+                            <div className='text-zinc-400'>
+                              <span className='text-zinc-500'>SHA:</span> {engService.sha}
+                            </div>
+                          )}
+                          
+                          {engService.uptime && (
+                            <div className='text-zinc-400'>
+                              <span className='text-zinc-500'>Uptime:</span> {engService.uptime}
+                            </div>
+                          )}
+                          
+                          {engService.url && engService.url !== 'None' && (
+                            <div className='text-blue-400'>
+                              <a 
+                                href={engService.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className='hover:underline'
+                              >
+                                {engService.url}
+                              </a>
+                            </div>
+                          )}
+                          
+                          {/* Health Status Breakdown */}
+                          <div className='col-span-2'>
+                            <div className='flex gap-4 text-zinc-400'>
+                              <span className={`px-2 py-1 rounded text-xs ${
+                                engService.health === 'healthy' ? 'bg-green-700 text-green-200' :
+                                engService.health === 'unhealthy' ? 'bg-red-700 text-red-200' :
+                                'bg-yellow-700 text-yellow-200'
+                              }`}>
+                                <span className='text-zinc-300'>Resolvers:</span> {engService.health}
+                              </span>
+                              
+                              {engService.consumers && (
+                                <span className={`px-2 py-1 rounded text-xs ${
+                                  engService.consumers === 'healthy' ? 'bg-green-700 text-green-200' :
+                                  engService.consumers === 'unhealthy' ? 'bg-red-700 text-red-200' :
+                                  'bg-yellow-700 text-yellow-200'
+                                }`}>
+                                  <span className='text-zinc-300'>Consumers:</span> {engService.consumers}
+                                </span>
+                              )}
+                              
+                              {engService.jobs && (
+                                <span className={`px-2 py-1 rounded text-xs ${
+                                  engService.jobs === 'healthy' ? 'bg-green-700 text-green-200' :
+                                  engService.jobs === 'unhealthy' ? 'bg-red-700 text-red-200' :
+                                  'bg-yellow-700 text-yellow-200'
+                                }`}>
+                                  <span className='text-zinc-300'>Jobs:</span> {engService.jobs}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               {/* Instances */}
