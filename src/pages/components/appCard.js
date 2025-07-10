@@ -1,6 +1,5 @@
 import {
   faClock,
-  faCog,
   faCube,
   faFilter,
   faMemory,
@@ -17,38 +16,7 @@ import { Popover, Switch } from '@headlessui/react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-
-const LOCAL_SERVICE_NAMES = [
-  "accounts-service",
-  "brand-configuration",
-  "cart-service",
-  "claims-service",
-  "commerce-service",
-  "cove",
-  "doctor-api",
-  "doctors-portal",
-  "flow-service",
-  "fulfillment-service",
-  "graphql-gateway",
-  "id-verification",
-  "keeps-next",
-  "labs-service",
-  "launchpad",
-  "leads-service",
-  "legal-service",
-  "media-service",
-  "medplum",
-  "message-service",
-  "patient-link-service",
-  "platform",
-  "prescribe-service",
-  "prior-auth-service",
-  "quiz-service",
-  "soap-notes-service",
-  "tasks-service",
-  "treatments-service",
-  "treatments-web",
-];
+import { LOCAL_SERVICE_NAMES } from '../../utils/service';
 
 const AppCard = () => {
   const [apps, setApps] = useState([]);
