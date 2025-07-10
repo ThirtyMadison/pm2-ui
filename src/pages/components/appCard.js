@@ -1,13 +1,8 @@
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Popover, Switch } from '@headlessui/react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faClock,
   faCog,
   faCube,
   faFilter,
-  faIdCard,
   faMemory,
   faMicrochip,
   faPlayCircle,
@@ -15,8 +10,12 @@ import {
   faSkull,
   faStop,
   faSyncAlt,
-  faTerminal,
+  faTerminal
 } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Popover, Switch } from '@headlessui/react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 
 const LOCAL_SERVICE_NAMES = [
@@ -288,9 +287,6 @@ const AppCard = () => {
                         <div>
                           <span className='font-semibold text-zinc-200'>
                             {app.name}
-                          </span>
-                          <span className='text-zinc-400 text-sm ml-2'>
-                            (Instance {app.instanceId})
                           </span>
                         </div>
                       </div>
