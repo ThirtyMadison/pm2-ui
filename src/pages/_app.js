@@ -1,4 +1,3 @@
-import { SessionProvider } from 'next-auth/react';
 import Head from 'next/head';
 import { useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
@@ -20,11 +19,9 @@ function MyApp({ Component, pageProps }) {
   return (
     <>
       <ToastContainer autoClose={2000} />
-      <SessionProvider session={pageProps.session}>
         <Head />
 
         <Component {...pageProps} />
-      </SessionProvider>
     </>
   );
 }

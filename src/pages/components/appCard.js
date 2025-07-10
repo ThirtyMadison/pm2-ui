@@ -202,7 +202,7 @@ const AppCard = () => {
   return (
     <>
       {/* Header with filters */}
-      <div className='flex flex-col sm:flex-row justify-between mb-6 px-4 text-zinc-100 gap-4'>
+      <div className='flex flex-col sm:flex-row justify-between mb-6 text-zinc-100 gap-4'>
         <div className='flex items-center gap-4'>
           <Popover className='relative'>
             <Popover.Button className='flex items-center gap-2 text-gray-100 bg-zinc-700 hover:bg-zinc-600 p-3 rounded-lg transition-colors'>
@@ -243,7 +243,7 @@ const AppCard = () => {
       </div>
 
       {/* Service Groups Grid */}
-      <div className='grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6 px-4'>
+      <div className='grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6 pb-6'>
         {filteredGroupNames.map((groupName) => {
           const visibleApps = groupedApps[groupName].filter(toggleVisibility);
           if (visibleApps.length === 0) return null;
@@ -326,7 +326,7 @@ const AppCard = () => {
                   </div>
                   
                   {/* Group Actions */}
-                  <div className='flex gap-2'>
+                  <div className='flex gap-2 flex-wrap'>
                     <button
                       className='p-2 bg-zinc-700 hover:bg-zinc-600 rounded-lg transition-colors'
                       onClick={() => pm2AppAction(groupName, 'delete')}
@@ -498,7 +498,7 @@ const AppCard = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className='flex gap-2'>
+                    <div className='flex gap-2 flex-wrap'>
                       {app.status === 'online' ? (
                         <>
                           <button
