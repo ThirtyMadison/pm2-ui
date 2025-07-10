@@ -34,6 +34,17 @@ const EngToolkitToolbar = () => {
     setFlags(prev => ({ ...prev, [flag]: value }));
   };
 
+  const handleMultiSelectToggle = (flag, service) => {
+    setFlags(prev => {
+      const currentArray = prev[flag] || [];
+      const newArray = currentArray.includes(service)
+        ? currentArray.filter(s => s !== service)
+        : [...currentArray, service];
+      
+      return { ...prev, [flag]: newArray.length > 0 ? newArray : undefined };
+    });
+  };
+
   const addLog = (type, message, timestamp = new Date()) => {
     setLogs(prev => [...prev, { type, message, timestamp }]);
   };
@@ -218,10 +229,10 @@ const EngToolkitToolbar = () => {
         <label className="block text-sm font-medium text-zinc-200 mb-2">
           Options
         </label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {/* Boolean flags */}
           {selectedAction === 'setup' && (
-            <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <label className="flex items-center space-x-2 cursor-pointer p-3 bg-zinc-900 rounded-lg hover:bg-zinc-800 transition-colors">
                 <input
                   type="checkbox"
@@ -242,7 +253,7 @@ const EngToolkitToolbar = () => {
                 />
                 <span className="text-sm text-zinc-300">Skip platform and doctor-api demo dump download</span>
               </label>
-            </>
+            </div>
           )}
           
           {selectedAction === 'download-db' && (
@@ -258,38 +269,57 @@ const EngToolkitToolbar = () => {
             </label>
           )}
 
-          {/* Service-specific flags */}
+          {/* Service-specific flags - Multi-select */}
           {['setup', 'pull-latest', 'update-env-files', 'build', 'migrate', 'refresh-env', 'start'].includes(selectedAction) && (
-            <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Only Services */}
               <div>
-                <label className="block text-sm font-medium text-zinc-200 mb-2">Only Service</label>
-                <select
-                  value={flags.only || ''}
-                  onChange={(e) => handleFlagChange('only', e.target.value || undefined)}
-                  className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-blue-500 focus:outline-none transition-colors"
-                  disabled={isLoading}
-                >
-                  <option value="">All services</option>
+                <label className="block text-sm font-medium text-zinc-200 mb-2">
+                  Only Services
+                </label>
+                <div className="max-h-48 overflow-y-auto border border-zinc-600 rounded-lg p-3 bg-zinc-900">
                   {LOCAL_SERVICE_NAMES.map(service => (
-                    <option key={service} value={service}>{service}</option>
+                    <label key={`only-${service}`} className="flex items-center space-x-2 cursor-pointer hover:bg-zinc-800 p-1 rounded transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={(flags.only || []).includes(service)}
+                        onChange={() => handleMultiSelectToggle('only', service)}
+                        className="rounded border-zinc-600 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 bg-zinc-700"
+                        disabled={isLoading}
+                      />
+                      <span className="text-sm text-zinc-300">{service}</span>
+                    </label>
                   ))}
-                </select>
+                </div>
+                <div className="mt-2 text-sm text-zinc-400">
+                  Selected: {(flags.only || []).length} services
+                </div>
               </div>
+
+              {/* Exclude Services */}
               <div>
-                <label className="block text-sm font-medium text-zinc-200 mb-2">Exclude Service</label>
-                <select
-                  value={flags.exclude || ''}
-                  onChange={(e) => handleFlagChange('exclude', e.target.value || undefined)}
-                  className="w-full p-3 bg-zinc-700 border border-zinc-600 rounded-lg text-white focus:border-blue-500 focus:outline-none transition-colors"
-                  disabled={isLoading}
-                >
-                  <option value="">No exclusions</option>
+                <label className="block text-sm font-medium text-zinc-200 mb-2">
+                  Exclude Services
+                </label>
+                <div className="max-h-48 overflow-y-auto border border-zinc-600 rounded-lg p-3 bg-zinc-900">
                   {LOCAL_SERVICE_NAMES.map(service => (
-                    <option key={service} value={service}>{service}</option>
+                    <label key={`exclude-${service}`} className="flex items-center space-x-2 cursor-pointer hover:bg-zinc-800 p-1 rounded transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={(flags.exclude || []).includes(service)}
+                        onChange={() => handleMultiSelectToggle('exclude', service)}
+                        className="rounded border-zinc-600 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 bg-zinc-700"
+                        disabled={isLoading}
+                      />
+                      <span className="text-sm text-zinc-300">{service}</span>
+                    </label>
                   ))}
-                </select>
+                </div>
+                <div className="mt-2 text-sm text-zinc-400">
+                  Selected: {(flags.exclude || []).length} services
+                </div>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>

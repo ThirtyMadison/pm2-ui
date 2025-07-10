@@ -59,8 +59,14 @@ export default function handler(req, res) {
   Object.entries(flags).forEach(([key, value]) => {
     if (flagMappings[key]) {
       if (key === 'only' || key === 'exclude') {
-        // These flags take a service name as argument
-        if (value && typeof value === 'string') {
+        // These flags can take multiple service names
+        if (Array.isArray(value) && value.length > 0) {
+          // Add each service separately: --only service1 --only service2
+          value.forEach(service => {
+            args.push(flagMappings[key], service);
+          });
+        } else if (typeof value === 'string' && value.trim()) {
+          // Legacy single service support
           args.push(flagMappings[key], value);
         }
       } else if (value === true) {
