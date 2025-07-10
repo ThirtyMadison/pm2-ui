@@ -1,0 +1,247 @@
+import { spawn } from 'child_process';
+import os from 'os';
+
+export default function handler(req, res) {
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', ['GET']);
+    res.status(405).end(`Method ${req.method} Not Allowed`);
+    return;
+  }
+
+  const cwd = process.env.SERVICES_DIR?.length ? `${os.homedir()}${process.env.SERVICES_DIR}` : process.env.HOME;
+  const child = spawn('eng', ['local', 'status'], {
+    stdio: ['pipe', 'pipe', 'pipe'],
+    shell: true,
+    cwd,
+    env: {
+      ...process.env,
+      PATH: process.env.PATH,
+      HOME: process.env.HOME,
+      USER: process.env.USER,
+      COLUMNS: '400',
+    }
+  });
+
+  let stdout = '';
+  let stderr = '';
+
+  child.stdout.on('data', (data) => {
+    stdout += data.toString();
+  });
+
+  child.stderr.on('data', (data) => {
+    stderr += data.toString();
+  });
+
+  child.on('close', (code) => {
+  
+    if (code === 0) {
+      // Parse the status output
+      const parsedStatus = parseEngStatus(stdout);
+      res.status(200).json({
+        success: true,
+        data: parsedStatus,
+        rawOutput: stdout
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: `Command failed with exit code ${code}`,
+        stderr: stderr,
+        rawOutput: stdout
+      });
+    }
+  });
+
+  child.on('error', (error) => {
+    console.error('Error executing eng local status:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  });
+}
+
+function parseEngStatus(output) {
+  const lines = output.split('\n');
+  const services = [];
+  
+  // Skip the header lines and empty lines
+  let dataLines = lines.filter(line => {
+    const trimmed = line.trim();
+    return trimmed.length > 0 && 
+           !trimmed.startsWith('SERVICE') && 
+           !trimmed.startsWith('---') &&
+           !trimmed.startsWith('MESSAGE');
+  });
+
+  // Group lines by service (look for lines that start with a service name)
+  const serviceGroups = [];
+  let currentGroup = null;
+
+  for (const line of dataLines) {
+    const trimmedLine = line.trim();
+    
+    // Check if this is an infrastructure service
+    const isInfrastructureService = ['redis', 'rabbitmq', 'zookeeper', 'kafka'].some(infra => 
+      trimmedLine.startsWith(infra)
+    );
+    
+    if (isInfrastructureService) {
+      // Infrastructure services are on single lines
+      const uptimeMatch = trimmedLine.match(/(\d+ days?, \d+:\d+:\d+ hrs?)/);
+      const uptime = uptimeMatch ? uptimeMatch[1] : '';
+      const serviceName = trimmedLine.split(/\s+/)[0];
+      
+      services.push({
+        name: matchServiceName(serviceName),
+        status: 'online',
+        health: 'healthy',
+        commitMessage: '',
+        sha: '',
+        consumers: '',
+        jobs: '',
+        uptime: uptime,
+        port: '',
+        url: '',
+        details: [],
+        isInfrastructure: true
+      });
+    } else {
+      // For regular services, look for lines that start with a service name
+      const serviceNameMatch = trimmedLine.match(/^([a-zA-Z][a-zA-Z0-9-]+)/);
+      
+      if (serviceNameMatch) {
+        // This is a new service, save the previous group and start a new one
+        if (currentGroup) {
+          serviceGroups.push(currentGroup);
+        }
+        currentGroup = {
+          serviceName: matchServiceName(serviceNameMatch[1]),
+          lines: [trimmedLine]
+        };
+      } else if (currentGroup) {
+        // This is a continuation line for the current service
+        currentGroup.lines.push(trimmedLine);
+      }
+    }
+  }
+  
+  // Add the last group
+  if (currentGroup) {
+    serviceGroups.push(currentGroup);
+  }
+
+  // Parse each service group
+  for (const group of serviceGroups) {
+    const allLines = group.lines.join(' ');
+    
+    // Find the SHA hash
+    const shaMatch = allLines.match(/\b([a-f0-9]{7,8})\b/);
+    
+    if (shaMatch) {
+      const sha = shaMatch[1];
+      const shaIndex = allLines.indexOf(sha);
+      
+      // Extract everything after SHA
+      const afterSha = allLines.substring(shaIndex + sha.length).trim();
+      const afterShaParts = afterSha.split(/\s+/);
+      
+      // Parse the parts after SHA: HEALTH CONSUMERS JOBS UPTIME PORT URL
+      const health = afterShaParts[0] || 'unknown';
+      const consumers = afterShaParts[1] || '';
+      const jobs = afterShaParts[2] || '';
+      const uptime = afterShaParts[3] || '';
+      const port = afterShaParts[4] || '';
+      const url = afterShaParts.slice(5).join(' ') || '';
+      
+      // Extract commit message (everything between service name and SHA)
+      const beforeSha = allLines.substring(group.serviceName.length, shaIndex).trim();
+      
+      // Determine status based on health
+      let status = 'unknown';
+      if (health === 'healthy') {
+        status = 'online';
+      } else if (health === 'unhealthy') {
+        status = 'error';
+      } else if (health === 'stopped' || health === 'offline') {
+        status = 'stopped';
+      }
+      
+      services.push({
+        name: group.serviceName,
+        status: status,
+        health: health,
+        consumers: consumers,
+        jobs: jobs,
+        commitMessage: beforeSha,
+        sha: sha,
+        uptime: uptime,
+        port: port,
+        url: url,
+        details: [],
+        isInfrastructure: false
+      });
+    }
+  }
+
+  return {
+    services,
+    summary: {
+      total: services.length,
+      online: services.filter(s => s.status === 'online').length,
+      stopped: services.filter(s => s.status === 'stopped').length,
+      error: services.filter(s => s.status === 'error').length,
+      unknown: services.filter(s => s.status === 'unknown').length
+    }
+  };
+}
+
+// Import the service names
+const LOCAL_SERVICE_NAMES = [
+  "accounts-service",
+  "brand-configuration",
+  "cart-service",
+  "claims-service",
+  "commerce-service",
+  "cove",
+  "doctor-api",
+  "doctors-portal",
+  "flow-service",
+  "fulfillment-service",
+  "graphql-gateway",
+  "id-verification",
+  "keeps-next",
+  "labs-service",
+  "launchpad",
+  "leads-service",
+  "legal-service",
+  "media-service",
+  "medplum",
+  "message-service",
+  "patient-link-service",
+  "platform",
+  "prescribe-service",
+  "prior-auth-service",
+  "quiz-service",
+  "soap-notes-service",
+  "tasks-service",
+  "treatments-service",
+  "treatments-web",
+]; 
+
+// Function to match truncated service names to full names
+function matchServiceName(truncatedName) {
+  // Remove trailing dots and clean up
+  const cleanName = truncatedName.replace(/…$/, '').replace(/…$/, '');
+  
+  // Find the best match
+  for (const fullName of LOCAL_SERVICE_NAMES) {
+    if (fullName.startsWith(cleanName)) {
+      return fullName;
+    }
+  }
+  
+  // If no match found, return the original
+  return truncatedName;
+} 
