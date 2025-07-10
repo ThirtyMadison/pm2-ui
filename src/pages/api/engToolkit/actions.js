@@ -112,6 +112,11 @@ export default function handler(req, res) {
     }
   });
 
+  res.write(`data: ${JSON.stringify({
+    type: 'pid',
+    pid: child.pid
+  })}\n\n`);
+
   // Handle stdout
   child.stdout.on('data', (data) => {
     const output = data.toString();

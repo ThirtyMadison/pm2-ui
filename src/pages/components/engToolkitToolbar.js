@@ -10,6 +10,7 @@ const EngToolkitToolbar = () => {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const eventSourceRef = useRef(null);
+  const [currentPid, setCurrentPid] = useState(null);
 
   const actions = [
     { value: 'download-db', label: 'Download DB', description: 'Download database dumps' },
@@ -138,14 +139,38 @@ const EngToolkitToolbar = () => {
         setError(data.error);
         setIsLoading(false);
         break;
+      case 'pid':
+        setCurrentPid(data.pid);
+        break;
     }
   };
 
-  const stopExecution = () => {
+  const stopExecution = async () => {
+    if (currentPid) {
+      try {
+        const response = await fetch('/api/engToolkit/stop', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ pid: currentPid })
+        });
+
+        if (!response.ok) {
+          addLog('error', `Failed to stop process`);
+        }
+
+        setCurrentPid(null);
+      } catch (error) {
+        addLog('error', `Failed to stop process: ${error.message}`);
+      }
+    }
+
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
     }
+
     setIsLoading(false);
     addLog('info', 'Execution stopped by user');
   };
@@ -157,6 +182,8 @@ const EngToolkitToolbar = () => {
     setResult(null);
     setError(null);
     setLogs([]);
+    setCurrentPid(null);
+
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
