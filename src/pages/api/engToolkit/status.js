@@ -1,5 +1,6 @@
 import { spawn } from 'child_process';
 import os from 'os';
+import { LOCAL_SERVICE_NAMES } from '../../../utils/service.js';
 
 export default function handler(req, res) {
   if (req.method !== 'GET') {
@@ -196,39 +197,6 @@ function parseEngStatus(output) {
     }
   };
 }
-
-// Import the service names
-const LOCAL_SERVICE_NAMES = [
-  "accounts-service",
-  "brand-configuration",
-  "cart-service",
-  "claims-service",
-  "commerce-service",
-  "cove",
-  "doctor-api",
-  "doctors-portal",
-  "flow-service",
-  "fulfillment-service",
-  "graphql-gateway",
-  "id-verification",
-  "keeps-next",
-  "labs-service",
-  "launchpad",
-  "leads-service",
-  "legal-service",
-  "media-service",
-  "medplum",
-  "message-service",
-  "patient-link-service",
-  "platform",
-  "prescribe-service",
-  "prior-auth-service",
-  "quiz-service",
-  "soap-notes-service",
-  "tasks-service",
-  "treatments-service",
-  "treatments-web",
-]; 
 
 // Function to match truncated service names to full names
 function matchServiceName(truncatedName) {
