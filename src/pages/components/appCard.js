@@ -332,12 +332,6 @@ const AppCard = () => {
                             </div>
                           )}
                           
-                          {engService.uptime && (
-                            <div className='text-zinc-400'>
-                              <span className='text-zinc-500'>Uptime:</span> {engService.uptime}
-                            </div>
-                          )}
-                          
                           {/* Health Status - Simplified */}
                           <div className='col-span-2'>
                             <div className='flex gap-2 text-zinc-400'>
