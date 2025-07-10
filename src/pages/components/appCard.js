@@ -226,7 +226,7 @@ const AppCard = () => {
                   </div>
                   
                   {/* Group Actions */}
-                  <div className='flex gap-2'>
+                  <div className='flex gap-2 flex-wrap'>
                     <button
                       className='p-2 bg-zinc-700 hover:bg-zinc-600 rounded-lg transition-colors'
                       onClick={() => pm2AppAction(groupName, 'delete')}
