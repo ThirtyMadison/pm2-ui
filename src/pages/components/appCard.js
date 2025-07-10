@@ -200,7 +200,7 @@ const AppCard = () => {
       </div>
 
       {/* Service Groups Grid */}
-      <div className='grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6'>
+      <div className='grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6 pb-6'>
         {filteredGroupNames.map((groupName) => {
           const visibleApps = groupedApps[groupName].filter(toggleVisibility);
           if (visibleApps.length === 0) return null;

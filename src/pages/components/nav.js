@@ -7,16 +7,17 @@ import Link from 'next/link';
 
 const Navbar = ({ onEngToolkitToolbarToggle, isEngToolkitToolbarEnabled }) => {
   return (
-    <div className='px-3 w-full z-[100] fixed top-0 bg-black/80 backdrop-blur-sm h-[55px] justify-between items-center align-middle flex select-none cursor-default'>
-      <Link href={'/'}>
-        <p className='font-bold text-gray-100 text-xl'>
-          <FontAwesomeIcon
-            icon={faHeartPulse}
-            className='pr-2 hidden md:inline-block'
-          />
-          PM2 UI
-        </p>
-      </Link>
+    <div className='px-3 w-full z-[100] fixed top-0 bg-black/80 backdrop-blur-sm h-[55px] items-center align-middle flex select-none cursor-default'>
+      <div className='w-full max-w-7xl mx-auto justify-between flex'>
+        <Link href={'/'}>
+          <p className='font-bold text-gray-100 text-xl'>
+            <FontAwesomeIcon
+              icon={faHeartPulse}
+              className='pr-2 hidden md:inline-block'
+            />
+            PM2 UI
+          </p>
+        </Link>
 
         <button
           className='p-1 px-3 flex h-min items-center font-bold text-white rounded-md bg-gradient-to-r from-zinc-600 to-zinc-700 hover:bg-blue-300'
@@ -33,6 +34,7 @@ const Navbar = ({ onEngToolkitToolbarToggle, isEngToolkitToolbarEnabled }) => {
           />
           Eng Toolkit
         </button>
+      </div>
     </div>
   );
 };
