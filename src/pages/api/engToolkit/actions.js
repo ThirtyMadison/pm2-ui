@@ -76,7 +76,7 @@ export default function handler(req, res) {
     }
   });
 
-  const cwd = `${os.homedir()}${process.env.SERVICES_DIR}`;
+  const cwd = process.env.HOME;
   
   // Build the full command - try to find eng command first
   const fullCommand = `eng ${args.join(' ')}`;
@@ -99,7 +99,7 @@ export default function handler(req, res) {
   })}\n\n`);
 
   // Spawn the process with proper context - use zsh to run the command
-  const child = spawn('zsh', ['-c', fullCommand], {
+  const child = spawn(fullCommand, {
     stdio: ['pipe', 'pipe', 'pipe'],
     shell: true,
     cwd,
@@ -119,6 +119,10 @@ export default function handler(req, res) {
       type: 'stdout', 
       data: output 
     })}\n\n`);
+
+    if (typeof res.flush === 'function') {
+      res.flush();
+    }
   });
 
   // Handle stderr
@@ -128,6 +132,10 @@ export default function handler(req, res) {
       type: 'stderr', 
       data: output 
     })}\n\n`);
+
+    if (typeof res.flush === 'function') {
+      res.flush();
+    }
   });
 
   // Handle process completion
