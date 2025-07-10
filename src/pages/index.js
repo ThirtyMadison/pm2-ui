@@ -1,8 +1,6 @@
 import AppCard from './components/appCard';
-import Navbar from './components/nav';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDashboard } from '@fortawesome/free-solid-svg-icons';
 import Footer from './components/footer';
+import Navbar from './components/nav';
 
 export default function Home({ session }) {
   return (

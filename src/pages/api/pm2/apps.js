@@ -1,5 +1,4 @@
 import pm2 from 'pm2';
-import Image from 'next/image';
 
 export default async function handler(req, res) {
   try {
