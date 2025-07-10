@@ -52,7 +52,7 @@ const ActionsBar = ({
                 />
             ))}
 
-            {status === 'online' && index && (
+            {status === 'online' && index !== undefined && (
                 <Link
                     href={`/logs/${encodeURIComponent(name)}?index=${index}`}
                     className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-zinc-700 hover:bg-zinc-600 rounded-lg transition-colors text-white text-sm font-medium"
