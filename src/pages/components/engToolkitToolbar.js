@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { LOCAL_SERVICE_NAMES } from '../../utils/service';
+import EngToolkitLogs from "@/pages/components/engToolkitLogs";
 
 const EngToolkitToolbar = () => {
   const [selectedAction, setSelectedAction] = useState('');
@@ -387,23 +388,7 @@ const EngToolkitToolbar = () => {
           <label className="block text-sm font-medium text-zinc-200 mb-2">
             Command Output
           </label>
-          <div className="bg-black border border-zinc-600 rounded-lg p-4 h-96 overflow-y-auto font-mono text-sm">
-            {logs.map((log, index) => (
-              <div key={index} className="mb-1">
-                <span className="text-zinc-500 text-xs">
-                  {log.timestamp.toLocaleTimeString()} [{log.type}]
-                </span>
-                <div className={`whitespace-pre-wrap ${getLogTypeColor(log.type)}`}>
-                  {log.message}
-                </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div className="animate-pulse">
-                <span className="text-yellow-400">● Running...</span>
-              </div>
-            )}
-          </div>
+          <EngToolkitLogs logs={logs} isLoading={isLoading} />
         </div>
       )}
 
