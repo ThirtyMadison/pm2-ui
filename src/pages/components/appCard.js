@@ -1,17 +1,17 @@
-import {
-    faChevronDown,
-    faChevronUp,
-    faCube,
-    faFilter,
-    faSkull,
-} from '@fortawesome/free-solid-svg-icons';
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import {Popover, Switch} from '@headlessui/react';
-import {useEffect, useState} from 'react';
-import {toast} from 'react-toastify';
-import {LOCAL_SERVICE_NAMES} from '@/utils/service';
 import ActionsBar from "@/pages/components/actionsBar";
 import AppInstance from "@/pages/components/appInstance";
+import { LOCAL_SERVICE_NAMES } from '@/utils/service';
+import {
+  faChevronDown,
+  faChevronUp,
+  faCube,
+  faFilter,
+  faSkull,
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Popover, Switch } from '@headlessui/react';
+import { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 
 const AppCard = () => {
     const [apps, setApps] = useState([]);
@@ -50,14 +50,14 @@ const AppCard = () => {
     // Function to get eng status for a service
     const getEngStatusForService = (serviceName) => {
         if (!engStatus || !engStatus.services) return null;
-        console.log('Looking for service:', serviceName);
-        console.log('Available services:', engStatus.services.map(s => s.name));
+        // console.log('Looking for service:', serviceName);
+        // console.log('Available services:', engStatus.services.map(s => s.name));
         const found = engStatus.services.find(service =>
             service.name === serviceName ||
             serviceName.includes(service.name) ||
             service.name.includes(serviceName)
         );
-        console.log('Found service:', found);
+        // console.log('Found service:', found);
         return found;
     };
 
@@ -101,8 +101,8 @@ const AppCard = () => {
                     <details style={{marginTop: '8px', fontSize: '12px'}}>
                         <summary style={{cursor: 'pointer', color: '#fca5a5'}}>Click to expand</summary>
                         <div style={{marginTop: '4px', paddingLeft: '8px'}}>
-                            {unhealthyServices.map((service, index) => (
-                                <div key={index} style={{marginBottom: '2px'}}>• {service}</div>
+                            {unhealthyServices.map((service) => (
+                                <div key={service} style={{marginBottom: '2px'}}>• {service}</div>
                             ))}
                         </div>
                     </details>
@@ -151,7 +151,6 @@ const AppCard = () => {
                     // Check for unhealthy services using current state as previous
                     checkUnhealthyServices(data.data, currentState);
                     setEngStatus(data.data);
-                    console.log(data.data);
                 }
             } catch (error) {
                 console.error('Failed to fetch eng status:', error);
@@ -365,12 +364,21 @@ const AppCard = () => {
                     const visibleApps = groupedApps[groupName].filter(toggleVisibility);
                     if (visibleApps.length === 0) return null;
 
+                    const engService = getEngStatusForService(groupName);
+                    let url = engService?.url;
+
+                    // handle special case for launchpad
+                    if (groupName === 'launchpad') {
+                      url = 'http://nurx.com.localhost:3023';
+                    } else if (!url?.length && engService?.port) {
+                        url = `http://localhost:${engService?.port}/graphql`;
+                    }
+
                     return (
                         <div
                             key={groupName}
                             className={`rounded-lg shadow-md border overflow-hidden ${
                                 (() => {
-                                    const engService = getEngStatusForService(groupName);
                                     if (engService) {
                                         if (engService.isInfrastructure) {
                                             return 'bg-zinc-800 border-zinc-700'; // Neutral for infrastructure
@@ -401,7 +409,6 @@ const AppCard = () => {
                                                   </div>
                                                 ) : (
                                                     (() => {
-                                                        const engService = getEngStatusForService(groupName);
                                                         if (engService) {
                                                             if (engService.isInfrastructure) {
                                                                 return (
@@ -454,7 +461,6 @@ const AppCard = () => {
 
                                 {/* Eng Status Details - Simplified */}
                                 {(!loadingEngStatus || !initialLoad) && (() => {
-                                  const engService = getEngStatusForService(groupName);
                                   if (engService && !engService.isInfrastructure) {
                                     return (
                                       <div className='mt-3 p-2 bg-zinc-900 rounded border border-zinc-600'>
@@ -500,6 +506,7 @@ const AppCard = () => {
                                         status={getGroupStatus(visibleApps)}
                                         name={groupName}
                                         onAction={pm2GroupAction}
+                                        url={url}
                                     />
                                 </div>
                             </div>
