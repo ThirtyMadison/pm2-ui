@@ -22,6 +22,8 @@ const AppCard = () => {
     const [showStopped, setShowStopped] = useState(true);
     const [engStatus, setEngStatus] = useState(null);
     const [loadingEngStatus, setLoadingEngStatus] = useState(true);
+    const [initialLoad, setInitialLoad] = useState(true);
+    const [previousEngStatus, setPreviousEngStatus] = useState(null);
     const [expandedGroups, setExpandedGroups] = useState({});
     const [expandedAppActions, setExpandedAppActions] = useState({});
 
@@ -59,6 +61,65 @@ const AppCard = () => {
         return found;
     };
 
+    // Function to check for unhealthy services and show notifications
+    const checkUnhealthyServices = (newEngStatus, previousEngStatus) => {
+        if (!newEngStatus || !newEngStatus.services) return;
+
+        // Collect all unhealthy services
+        const unhealthyServices = [];
+        
+        newEngStatus.services.forEach(service => {
+            if (service.isInfrastructure) return; // Skip infrastructure services
+
+            const previousService = previousEngStatus?.services?.find(s => s.name === service.name);
+            let hasChanges = false;
+
+            // Check if service became unhealthy
+            if (service.health === 'unhealthy' && (!previousService || previousService.health !== 'unhealthy')) {
+                unhealthyServices.push(service.name);
+                hasChanges = true;
+            }
+
+            // Check if consumers became unhealthy
+            if (service.consumers === 'unhealthy' && (!previousService || previousService.consumers !== 'unhealthy')) {
+                unhealthyServices.push(`${service.name} consumers`);
+                hasChanges = true;
+            }
+
+            // Check if jobs became unhealthy
+            if (service.jobs === 'unhealthy' && (!previousService || previousService.jobs !== 'unhealthy')) {
+                unhealthyServices.push(`${service.name} jobs`);
+                hasChanges = true;
+            }
+        });
+
+        // Show single notification if there are unhealthy services
+        if (unhealthyServices.length > 0) {
+            toast.error(
+                <div>
+                    You have unhealthy services ({unhealthyServices.length})
+                    <details style={{marginTop: '8px', fontSize: '12px'}}>
+                        <summary style={{cursor: 'pointer', color: '#fca5a5'}}>Click to expand</summary>
+                        <div style={{marginTop: '4px', paddingLeft: '8px'}}>
+                            {unhealthyServices.map((service, index) => (
+                                <div key={index} style={{marginBottom: '2px'}}>• {service}</div>
+                            ))}
+                        </div>
+                    </details>
+                </div>,
+                {
+                    position: "top-right",
+                    autoClose: false, // Don't auto-close
+                    hideProgressBar: true,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    toastId: 'unhealthy-services', // Single notification ID
+                }
+            );
+        }
+    };
+
     useEffect(() => {
         async function fetchApps() {
             const res = await fetch('/api/pm2/apps');
@@ -78,10 +139,17 @@ const AppCard = () => {
 
         async function fetchEngStatus() {
             try {
-                setLoadingEngStatus(true);
+                // Only show loading on initial load
+                if (initialLoad) {
+                    setLoadingEngStatus(true);
+                }
                 const res = await fetch('/api/engToolkit/status');
                 const data = await res.json();
                 if (data.success) {
+                    // Store current state as previous before updating
+                    const currentState = engStatus;
+                    // Check for unhealthy services using current state as previous
+                    checkUnhealthyServices(data.data, currentState);
                     setEngStatus(data.data);
                     console.log(data.data);
                 }
@@ -89,6 +157,7 @@ const AppCard = () => {
                 console.error('Failed to fetch eng status:', error);
             } finally {
                 setLoadingEngStatus(false);
+                setInitialLoad(false);
             }
         }
 
@@ -325,12 +394,11 @@ const AppCard = () => {
                                                 <p className='text-zinc-400'>
                                                     {visibleApps.length} instance{visibleApps.length !== 1 ? 's' : ''}
                                                 </p>
-                                                {loadingEngStatus ? (
-                                                    <div className='flex items-center gap-2'>
-                                                        <div
-                                                            className='animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500'></div>
-                                                        <span className='text-zinc-400 text-xs'>Loading...</span>
-                                                    </div>
+                                                {loadingEngStatus && initialLoad ? (
+                                                  <div className='flex items-center gap-2'>
+                                                    <div className='animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500'></div>
+                                                    <span className='text-zinc-400 text-xs'>Loading...</span>
+                                                  </div>
                                                 ) : (
                                                     (() => {
                                                         const engService = getEngStatusForService(groupName);
@@ -385,47 +453,45 @@ const AppCard = () => {
                                 </div>
 
                                 {/* Eng Status Details - Simplified */}
-                                {!loadingEngStatus && (() => {
-                                    const engService = getEngStatusForService(groupName);
-                                    if (engService && !engService.isInfrastructure) {
-                                        return (
-                                            <div className='mt-3 p-2 bg-zinc-900 rounded border border-zinc-600'>
-                                                <div className='grid grid-cols-2 gap-2 text-xs'>
-                                                    {engService.commitMessage && (
-                                                        <div className='text-zinc-400 truncate'
-                                                             title={engService.commitMessage}>
-                                                            <span
-                                                                className='text-zinc-500'>Commit:</span> {engService.commitMessage}
-                                                        </div>
-                                                    )}
-
-                                                    {/* Health Status - Simplified */}
-                                                    <div className='col-span-2'>
-                                                        <div className='flex gap-2 text-zinc-400'>
-                                                            {engService.consumers && ['healthy', 'unhealthy'].includes(engService.consumers) && (
-                                                                <span className={`px-1.5 py-0.5 rounded text-xs ${
-                                                                    engService.consumers === 'healthy' ? 'bg-green-700 text-green-200' :
-                                                                        'bg-red-700 text-red-200'
-                                                                }`}>
-                                  Consumers: {engService.consumers}
-                                </span>
-                                                            )}
-
-                                                            {engService.jobs && ['healthy', 'unhealthy'].includes(engService.jobs) && (
-                                                                <span className={`px-1.5 py-0.5 rounded text-xs ${
-                                                                    engService.jobs === 'healthy' ? 'bg-green-700 text-green-200' :
-                                                                        'bg-red-700 text-red-200'
-                                                                }`}>
-                                  Jobs: {engService.jobs}
-                                </span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                {(!loadingEngStatus || !initialLoad) && (() => {
+                                  const engService = getEngStatusForService(groupName);
+                                  if (engService && !engService.isInfrastructure) {
+                                    return (
+                                      <div className='mt-3 p-2 bg-zinc-900 rounded border border-zinc-600'>
+                                        <div className='grid grid-cols-2 gap-2 text-xs'>
+                                          {engService.commitMessage && (
+                                            <div className='text-zinc-400 truncate' title={engService.commitMessage}>
+                                              <span className='text-zinc-500'>Commit:</span> {engService.commitMessage}
                                             </div>
-                                        );
-                                    }
-                                    return null;
+                                          )}
+
+                                          {/* Health Status - Simplified */}
+                                          <div className='col-span-2'>
+                                            <div className='flex gap-2 text-zinc-400'>
+                                              {engService.consumers && ['healthy', 'unhealthy'].includes(engService.consumers) && (
+                                                <span className={`px-1.5 py-0.5 rounded text-xs ${
+                                                  engService.consumers === 'healthy' ? 'bg-green-700 text-green-200' :
+                                                  'bg-red-700 text-red-200'
+                                                }`}>
+                                                  Consumers: {engService.consumers}
+                                                </span>
+                                              )}
+
+                                              {engService.jobs && ['healthy', 'unhealthy'].includes(engService.jobs) && (
+                                                <span className={`px-1.5 py-0.5 rounded text-xs ${
+                                                  engService.jobs === 'healthy' ? 'bg-green-700 text-green-200' :
+                                                  'bg-red-700 text-red-200'
+                                                }`}>
+                                                  Jobs: {engService.jobs}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
                                 })()}
 
                                 <div className="mt-4">
