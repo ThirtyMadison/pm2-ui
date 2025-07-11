@@ -29,3 +29,11 @@ export const LOCAL_SERVICE_NAMES = [
   "treatments-service",
   "treatments-web",
 ];
+
+export const FRONT_END_SERVICES = [
+  'cove',
+  'doctors-portal',
+  'keeps-next',
+  'treatments-web',
+  'launchpad'
+]

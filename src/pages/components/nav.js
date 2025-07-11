@@ -13,21 +13,32 @@ const Navbar = ({ onEngToolkitToolbarToggle, isEngToolkitToolbarEnabled }) => {
           <Logo />
         </Link>
 
-        <button
-          className='p-1 px-3 flex h-min items-center font-medium text-white rounded-md bg-gradient-to-r from-zinc-600 to-zinc-700 hover:bg-blue-300'
-          onClick={() => {
-            if (!isEngToolkitToolbarEnabled) {
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
+        <div className='flex gap-2'>
+          <a 
+            href={'http://admin.tm.localhost:3000/'} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className='p-1 px-3 flex h-min items-center font-medium text-white rounded-md bg-gradient-to-r from-zinc-600 to-zinc-700 hover:bg-blue-300'
+          >
+            Admin
+          </a>
 
-            onEngToolkitToolbarToggle(!isEngToolkitToolbarEnabled)}}
-        >
-          <FontAwesomeIcon
-            icon={faToolbox}
-            className='pr-2 hidden md:inline-block'
-          />
-          Eng Toolkit
-        </button>
+          <button
+            className='p-1 px-3 flex h-min items-center font-medium text-white rounded-md bg-gradient-to-r from-zinc-600 to-zinc-700 hover:bg-blue-300'
+            onClick={() => {
+              if (!isEngToolkitToolbarEnabled) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+
+              onEngToolkitToolbarToggle(!isEngToolkitToolbarEnabled)}}
+          >
+            <FontAwesomeIcon
+              icon={faToolbox}
+              className='pr-2 hidden md:inline-block'
+            />
+            Eng Toolkit
+          </button>
+        </div>
       </div>
     </div>
   );

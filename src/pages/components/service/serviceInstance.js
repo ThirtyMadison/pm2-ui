@@ -128,7 +128,7 @@ const ServiceInstance = ({app, index, isLoading}) => {
 
             {/* Action Buttons */}
             {showActions && (
-                <div className="mt-4">
+                <div className="mt-4 px-3">
                     <ActionsBar
                         status={app.status}
                         name={app.name}
