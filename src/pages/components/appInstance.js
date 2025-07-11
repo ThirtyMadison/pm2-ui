@@ -1,5 +1,4 @@
 // components/AppInstance.js
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
     faChevronDown,
     faChevronUp,
@@ -7,7 +6,8 @@ import {
     faMemory,
     faMicrochip,
 } from '@fortawesome/free-solid-svg-icons';
-import {useState} from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useState } from 'react';
 import ActionsBar from './actionsBar';
 
 const AppInstance = ({app, onAction, index}) => {
@@ -102,7 +102,7 @@ const AppInstance = ({app, onAction, index}) => {
 
             {/* Action Buttons */}
             {showActions && (
-                <div className="mt-4">
+                <div className="mt-4 px-3">
                     <ActionsBar
                         status={app.status}
                         name={app.name}
