@@ -15,7 +15,7 @@ const ActionButton = ({
                           className = '',
                           disabled = false,
                       }) => {
-    const baseStyles = 'flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-blue-600 hover:bg-blue-700 rounded text-white text-xs font-medium';
+    const baseStyles = 'flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-blue-600 hover:bg-blue-700 rounded text-white text-xs font-medium disabled:opacity-70 disabled:cursor-not-allowed';
     const variantStyles = BUTTON_VARIANTS[variant] || BUTTON_VARIANTS.blue;
 
     return (

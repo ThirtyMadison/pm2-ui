@@ -6,6 +6,8 @@ export default function handler(req, res) {
     }
 
     const { pid } = req.body;
+    console.log('Stopping process with PID:', pid);
+
     if (!pid) {
         res.status(400).json({ success: false, message: 'No process ID provided' });
         return;

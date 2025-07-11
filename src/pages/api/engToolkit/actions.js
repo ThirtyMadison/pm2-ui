@@ -1,173 +1,190 @@
-import { spawn } from 'child_process';
+import {spawn} from 'child_process';
 import os from 'os';
 
 export default function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
-    return;
-  }
+    if (req.method !== 'POST') {
+        res.setHeader('Allow', ['POST']);
+        res.status(405).end(`Method ${req.method} Not Allowed`);
+        return;
+    }
 
-  const { action, services = [], flags = {} } = req.body;
+    const {action, services = [], flags = {}, type = 'global'} = req.body;
 
-  const validActions = [
-    'download-db',
-    'setup', 
-    'pull-latest',
-    'update-env-files',
-    'build',
-    'migrate',
-    'refresh-env',
-    'start'
-  ];
+    const validGlobalActions = [
+        'download-db',
+        'setup',
+        'pull-latest',
+        'update-env-files',
+        'build',
+        'migrate',
+        'refresh-env',
+        'start'
+    ];
 
-  if (!validActions.includes(action)) {
-    res.status(400).json({ 
-      success: false, 
-      message: 'Invalid action',
-      validActions 
+    const validGroupActions = [
+        'build'
+    ]
+
+    const actionType = ['global', 'group'];
+
+    if (!actionType.includes(type)) {
+        res.status(400).json(
+            {
+                success: false,
+                message: 'Invalid action type',
+                actionType
+            }
+        )
+    }
+
+    const activeActions = type === 'global' ? validGlobalActions : validGroupActions;
+
+    if (!activeActions.includes(action)) {
+        res.status(400).json({
+            success: false,
+            message: 'Invalid action',
+            validActions: activeActions
+        });
+        return;
+    }
+
+    // Set up Server-Sent Events
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Cache-Control'
     });
-    return;
-  }
 
-  // Set up Server-Sent Events
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Cache-Control'
-  });
+    // Build the command arguments
+    const args = ['local', action];
 
-  // Build the command arguments
-  const args = ['local', action];
-  
-  // Add services for download-db command
-  if (action === 'download-db' && services.length > 0) {
-    args.push(...services);
-  }
-  
-  // Add optional flags
-  const flagMappings = {
-    'skipDb': '--skip-db',
-    'skipDbDumps': '--skip-db-dumps',
-    'noParallel': '--no-parallel',
-    'only': '--only',
-    'exclude': '--exclude'
-  };
-  
-  Object.entries(flags).forEach(([key, value]) => {
-    if (flagMappings[key]) {
-      if (key === 'only' || key === 'exclude') {
-        // These flags can take multiple service names
-        if (Array.isArray(value) && value.length > 0) {
-          // Add each service separately: --only service1 --only service2
-          value.forEach(service => {
-            args.push(flagMappings[key], service);
-          });
-        } else if (typeof value === 'string' && value.trim()) {
-          // Legacy single service support
-          args.push(flagMappings[key], value);
+    // Add services for download-db command
+    if (action === 'download-db' && services.length > 0) {
+        args.push(...services);
+    }
+
+    // Add optional flags
+    const flagMappings = {
+        'skipDb': '--skip-db',
+        'skipDbDumps': '--skip-db-dumps',
+        'noParallel': '--no-parallel',
+        'only': '--only',
+        'exclude': '--exclude'
+    };
+
+    Object.entries(flags).forEach(([key, value]) => {
+        if (flagMappings[key]) {
+            if (key === 'only' || key === 'exclude') {
+                // These flags can take multiple service names
+                if (Array.isArray(value) && value.length > 0) {
+                    // Add each service separately: --only service1 --only service2
+                    value.forEach(service => {
+                        args.push(flagMappings[key], service);
+                    });
+                } else if (typeof value === 'string' && value.trim()) {
+                    // Legacy single service support
+                    args.push(flagMappings[key], value);
+                }
+            } else if (value === true) {
+                // Boolean flags
+                args.push(flagMappings[key]);
+            }
         }
-      } else if (value === true) {
-        // Boolean flags
-        args.push(flagMappings[key]);
-      }
-    }
-  });
+    });
 
-  const cwd = process.env.SERVICES_DIR?.length ? `${os.homedir()}${process.env.SERVICES_DIR}` : process.env.HOME;
-  
-  // Build the full command - try to find eng command first
-  const fullCommand = `eng ${args.join(' ')}`;
-  
-  console.log('Executing command:', fullCommand);
-  console.log('Working directory:', cwd);
-  console.log('Environment PATH:', process.env.PATH);
+    const cwd = process.env.SERVICES_DIR?.length ? `${os.homedir()}${process.env.SERVICES_DIR}` : process.env.HOME;
 
-  // Send initial message
-  res.write(`data: ${JSON.stringify({ 
-    type: 'start', 
-    message: `Starting command: eng ${args.join(' ')}`,
-    workingDirectory: cwd
-  })}\n\n`);
+    // Build the full command - try to find eng command first
+    const fullCommand = `eng ${args.join(' ')}`;
 
-  // Send debug info
-  res.write(`data: ${JSON.stringify({ 
-    type: 'info', 
-    data: `Searching for eng command...\n`
-  })}\n\n`);
+    console.log('Executing command:', fullCommand);
+    console.log('Working directory:', cwd);
 
-  // Spawn the process with proper context - use zsh to run the command
-  const child = spawn(fullCommand, {
-    stdio: ['pipe', 'pipe', 'pipe'],
-    shell: true,
-    cwd,
-    env: {
-      ...process.env,
-      // Preserve important environment variables
-      PATH: process.env.PATH,
-      HOME: process.env.HOME,
-      USER: process.env.USER,
-    }
-  });
-
-  res.write(`data: ${JSON.stringify({
-    type: 'pid',
-    pid: child.pid
-  })}\n\n`);
-
-  // Handle stdout
-  child.stdout.on('data', (data) => {
-    const output = data.toString();
-    res.write(`data: ${JSON.stringify({ 
-      type: 'stdout', 
-      data: output 
+    // Send initial message
+    res.write(`data: ${JSON.stringify({
+        type: 'start',
+        message: `Starting command: eng ${args.join(' ')}`,
+        workingDirectory: cwd
     })}\n\n`);
 
-    if (typeof res.flush === 'function') {
-      res.flush();
-    }
-  });
-
-  // Handle stderr
-  child.stderr.on('data', (data) => {
-    const output = data.toString();
-    res.write(`data: ${JSON.stringify({ 
-      type: 'stderr', 
-      data: output 
+    // Send debug info
+    res.write(`data: ${JSON.stringify({
+        type: 'info',
+        data: `Searching for eng command...\n`
     })}\n\n`);
 
-    if (typeof res.flush === 'function') {
-      res.flush();
-    }
-  });
+    // Spawn the process with proper context - use zsh to run the command
+    const child = spawn(fullCommand, {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        shell: true,
+        cwd,
+        env: {
+            ...process.env,
+            // Preserve important environment variables
+            PATH: process.env.PATH,
+            HOME: process.env.HOME,
+            USER: process.env.USER,
+        }
+    });
 
-  // Handle process completion
-  child.on('close', (code) => {
-    console.log(`Command exited with code ${code}`);
-    res.write(`data: ${JSON.stringify({ 
-      type: 'end', 
-      code: code,
-      success: code === 0,
-      message: code === 0 ? 'Command completed successfully' : `Command failed with exit code ${code}`
+    res.write(`data: ${JSON.stringify({
+        type: 'pid',
+        pid: child.pid
     })}\n\n`);
-    res.end();
-  });
 
-  // Handle errors
-  child.on('error', (error) => {
-    console.error('Error executing command:', error);
-    res.write(`data: ${JSON.stringify({ 
-      type: 'error', 
-      error: error.message 
-    })}\n\n`);
-    res.end();
-  });
+    // Handle stdout
+    child.stdout.on('data', (data) => {
+        const output = data.toString();
+        res.write(`data: ${JSON.stringify({
+            type: 'stdout',
+            data: output
+        })}\n\n`);
 
-  // Handle client disconnect
-  req.on('close', () => {
-    console.log('Client disconnected, killing process');
-    child.kill();
-  });
+        if (typeof res.flush === 'function') {
+            res.flush();
+        }
+    });
+
+    // Handle stderr
+    child.stderr.on('data', (data) => {
+        const output = data.toString();
+        res.write(`data: ${JSON.stringify({
+            type: 'stderr',
+            data: output
+        })}\n\n`);
+
+        if (typeof res.flush === 'function') {
+            res.flush();
+        }
+    });
+
+    // Handle process completion
+    child.on('close', (code) => {
+        console.log(`Command exited with code ${code}`);
+        res.write(`data: ${JSON.stringify({
+            type: 'end',
+            code: code,
+            success: code === 0,
+            message: code === 0 ? 'Command completed successfully' : `Command failed with exit code ${code}`
+        })}\n\n`);
+        res.end();
+    });
+
+    // Handle errors
+    child.on('error', (error) => {
+        console.error('Error executing command:', error);
+        res.write(`data: ${JSON.stringify({
+            type: 'error',
+            error: error.message
+        })}\n\n`);
+        res.end();
+    });
+
+    // Handle client disconnect
+    req.on('close', () => {
+        console.log('Client disconnected, killing process');
+        child.kill();
+    });
 }

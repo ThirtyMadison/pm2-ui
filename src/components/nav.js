@@ -9,7 +9,7 @@ const Navbar = ({ onEngToolkitToolbarToggle, isEngToolkitToolbarEnabled }) => {
   return (
     <div className='px-3 w-full z-[100] fixed top-0 bg-black/80 backdrop-blur-sm h-[55px] items-center align-middle flex select-none cursor-default'>
       <div className='w-full max-w-7xl mx-auto justify-between flex'>
-        <Link href={'/'}>
+        <Link href={'/public'}>
           <Logo />
         </Link>
 

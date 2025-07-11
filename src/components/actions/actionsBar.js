@@ -1,22 +1,27 @@
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import {faSyncAlt, faRecycle, faStop, faPlayCircle, faTerminal} from '@fortawesome/free-solid-svg-icons';
+import {faRecycle, faStop, faPlayCircle, faTerminal, faHammer} from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
-import ActionButton from './ActionButton';
+import ActionButton from './actionButton';
 
 const ActionsBar = ({
                         status,
                         name,
                         onAction,
                         index,
+                        isGroup = false,
+                        isLoading = false
                     }) => {
     const actions = {
         online: [
-            {
-                icon: faSyncAlt,
-                label: 'Reload',
-                variant: 'blue',
-                action: 'reload'
-            },
+            ...(isGroup ? [
+                {
+                    icon: faHammer,
+                    label: 'Build',
+                    variant: 'blue',
+                    action: 'build',
+                    isLoading
+                }
+            ] : []),
             {
                 icon: faRecycle,
                 label: 'Restart',
@@ -31,6 +36,15 @@ const ActionsBar = ({
             }
         ],
         offline: [
+            ...(isGroup ? [
+                {
+                    icon: faHammer,
+                    label: 'Build',
+                    variant: 'blue',
+                    action: 'build',
+                    isLoading
+                }
+            ] : []),
             {
                 icon: faPlayCircle,
                 label: 'Start',
@@ -41,17 +55,7 @@ const ActionsBar = ({
     };
 
     return (
-        <div className="flex gap-1 p-3 pt-0">
-            {(status === 'online' ? actions.online : actions.offline).map((actionBtn) => (
-                <ActionButton
-                    key={actionBtn.action}
-                    icon={actionBtn.icon}
-                    label={actionBtn.label}
-                    variant={actionBtn.variant}
-                    onClick={() => onAction(name, actionBtn.action)}
-                />
-            ))}
-
+        <div className="flex gap-1 py-3 pt-0">
             {status === 'online' && index !== undefined && (
                 <Link
                     href={`/logs/${encodeURIComponent(name)}?index=${index}`}
@@ -61,6 +65,17 @@ const ActionsBar = ({
                     Logs
                 </Link>
             )}
+
+            {(status === 'online' ? actions.online : actions.offline).map((actionBtn) => (
+                <ActionButton
+                    key={actionBtn.action}
+                    icon={actionBtn.icon}
+                    label={actionBtn.label}
+                    variant={actionBtn.variant}
+                    onClick={() => onAction(name, actionBtn.action)}
+                    disabled={actionBtn.isLoading}
+                />
+            ))}
         </div>
     );
 };

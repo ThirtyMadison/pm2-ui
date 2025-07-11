@@ -2,7 +2,6 @@ import pm2 from 'pm2';
 
 export default async function handler(req, res) {
   try {
-    console.log('Request received');
     await new Promise((resolve, reject) => {
       pm2.connect((err) => {
         if (err) {
@@ -37,7 +36,6 @@ export default async function handler(req, res) {
             };
           });
 
-          console.log('Sending response');
           res.status(200).json(apps);
           resolve();
         });

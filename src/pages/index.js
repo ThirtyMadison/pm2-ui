@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import AppCard from './components/appCard';
-import EngToolkitToolbar from './components/engToolkitToolbar';
-import Navbar from './components/nav';
+import AppCard from '@/components/appCard';
+import EngToolkitToolbar from '@/components/engToolkit/engToolkitToolbar';
+import Navbar from '@/components/nav';
 
 export default function Home() {
   const [isEngToolkitToolbarEnabled, setIsEngToolkitToolbarEnabled] = useState(false);
