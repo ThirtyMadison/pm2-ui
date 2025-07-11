@@ -84,6 +84,7 @@ const ActionsBar = ({
                         label={actionBtn.label}
                         variant={actionBtn.variant}
                         onClick={() => onAction(name, actionBtn.action)}
+                        disabled={actionBtn.isLoading}
                     />
                 ))}
             </div>

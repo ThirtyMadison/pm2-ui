@@ -10,7 +10,9 @@ const ServiceGroup = ({
                           groupName,
                           apps,
                           engService,
-                          loadingEngStatus
+                          loadingEngStatus,
+                          initialLoad,
+                          previousEngStatus
                       }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const isFirstRender = useRef(true);
@@ -100,6 +102,15 @@ const ServiceGroup = ({
         }
     };
 
+    let url = engService?.url;
+
+    // handle special case for launchpad
+    if (groupName === 'launchpad') {
+        url = 'http://nurx.com.localhost:3023';
+    } else if (!url?.length && engService?.port) {
+        url = `http://localhost:${engService?.port}/graphql`;
+    }
+
     return (
         <div
             className={`rounded-lg shadow-md border overflow-hidden flex flex-col ${
@@ -131,29 +142,36 @@ const ServiceGroup = ({
                                 <p className='text-zinc-400'>
                                     {apps.length} instance{apps.length !== 1 ? 's' : ''}
                                 </p>
-                                {loadingEngStatus ? (
+                                {loadingEngStatus && initialLoad ? (
                                     <div className='flex items-center gap-2'>
                                         <div
                                             className='animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500'></div>
                                         <span className='text-zinc-400 text-xs'>Loading...</span>
                                     </div>
                                 ) : (
-                                    engService && (
-                                        engService.isInfrastructure ? (
-                                            <span
-                                                className='px-2 py-1 rounded text-xs font-medium bg-zinc-700 text-zinc-300'>
-                                                Infrastructure
-                                            </span>
-                                        ) : (
-                                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                                engService.health === 'healthy' ? 'bg-green-700 text-green-200' :
-                                                    engService.health === 'unhealthy' ? 'bg-red-700 text-red-200' :
-                                                        'bg-yellow-700 text-yellow-200'
-                                            }`}>
-                                                {engService.health}
-                                            </span>
-                                        )
-                                    )
+                                    (() => {
+                                        if (engService) {
+                                            if (engService.isInfrastructure) {
+                                                return (
+                                                    <span
+                                                        className='px-2 py-1 rounded text-xs font-medium bg-zinc-700 text-zinc-300'>
+                                    Infrastructure
+                                  </span>
+                                                );
+                                            }
+                                            return (
+                                                <span
+                                                    className={`px-2 py-1 rounded text-xs font-medium ${
+                                                        engService.health === 'healthy' ? 'bg-green-700 text-green-200' :
+                                                            engService.health === 'unhealthy' ? 'bg-red-700 text-red-200' :
+                                                                'bg-yellow-700 text-yellow-200'
+                                                    }`}>
+                                  {engService.health}
+                                </span>
+                                            );
+                                        }
+                                        return null;
+                                    })()
                                 )}
                             </div>
                         </div>
@@ -182,40 +200,47 @@ const ServiceGroup = ({
                     </div>
                 </div>
 
-                {/* Eng Status Details */}
-                {!loadingEngStatus && engService && !engService.isInfrastructure && (
-                    <div className='mt-3 p-2 bg-zinc-900 rounded border border-zinc-600'>
-                        <div className='grid grid-cols-2 gap-2 text-xs'>
-                            {engService.commitMessage && (
-                                <div className='text-zinc-400 truncate' title={engService.commitMessage}>
-                                    <span className='text-zinc-500'>Commit:</span> {engService.commitMessage}
-                                </div>
-                            )}
-
-                            <div className='col-span-2'>
-                                <div className='flex gap-2 text-zinc-400'>
-                                    {engService.consumers && ['healthy', 'unhealthy'].includes(engService.consumers) && (
-                                        <span className={`px-1.5 py-0.5 rounded text-xs ${
-                                            engService.consumers === 'healthy' ? 'bg-green-700 text-green-200' :
-                                                'bg-red-700 text-red-200'
-                                        }`}>
-                                            Consumers: {engService.consumers}
-                                        </span>
+                {/* Eng Status Details - Simplified */}
+                {(!loadingEngStatus || !initialLoad) && (() => {
+                    if (engService && !engService.isInfrastructure) {
+                        return (
+                            <div className='mt-3 p-2 bg-zinc-900 rounded border border-zinc-600'>
+                                <div className='grid grid-cols-2 gap-2 text-xs'>
+                                    {engService.commitMessage && (
+                                        <div className='text-zinc-400 truncate'
+                                             title={engService.commitMessage}>
+                                            <span className='text-zinc-500'>Commit:</span> {engService.commitMessage}
+                                        </div>
                                     )}
 
-                                    {engService.jobs && ['healthy', 'unhealthy'].includes(engService.jobs) && (
-                                        <span className={`px-1.5 py-0.5 rounded text-xs ${
-                                            engService.jobs === 'healthy' ? 'bg-green-700 text-green-200' :
-                                                'bg-red-700 text-red-200'
-                                        }`}>
-                                            Jobs: {engService.jobs}
-                                        </span>
-                                    )}
+                                    {/* Health Status - Simplified */}
+                                    <div className='col-span-2'>
+                                        <div className='flex gap-2 text-zinc-400'>
+                                            {engService.consumers && ['healthy', 'unhealthy'].includes(engService.consumers) && (
+                                                <span className={`px-1.5 py-0.5 rounded text-xs ${
+                                                    engService.consumers === 'healthy' ? 'bg-green-700 text-green-200' :
+                                                        'bg-red-700 text-red-200'
+                                                }`}>
+                                  Consumers: {engService.consumers}
+                                </span>
+                                            )}
+
+                                            {engService.jobs && ['healthy', 'unhealthy'].includes(engService.jobs) && (
+                                                <span className={`px-1.5 py-0.5 rounded text-xs ${
+                                                    engService.jobs === 'healthy' ? 'bg-green-700 text-green-200' :
+                                                        'bg-red-700 text-red-200'
+                                                }`}>
+                                  Jobs: {engService.jobs}
+                                </span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                )}
+                        );
+                    }
+                    return null;
+                })()}
 
                 <div className="mt-4">
                     <ActionsBar
@@ -223,6 +248,7 @@ const ServiceGroup = ({
                         name={groupName}
                         onAction={(name, action) => onGroupAction(groupName, action, apps)}
                         isGroup
+                        url={url}
                         isLoading={isLoading}
                     />
                 </div>
