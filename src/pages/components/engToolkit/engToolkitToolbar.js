@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {LOCAL_SERVICE_NAMES} from '@/utils/service';
-import EngToolkitLogs from "@/components/engToolkit/engToolkitLogs";
+import EngToolkitLogs from "@/pages/components/engToolkit/engToolkitLogs";
 import {useCommandExecution} from "@/hooks/useCommandExecution";
 
 const EngToolkitToolbar = () => {

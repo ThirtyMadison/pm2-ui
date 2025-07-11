@@ -5,7 +5,7 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {Popover, Switch} from '@headlessui/react';
 import {useEffect, useState} from 'react';
 import {LOCAL_SERVICE_NAMES} from '@/utils/service';
-import ServiceGroup from "@/components/service/serviceGroup";
+import ServiceGroup from "@/pages/components/service/serviceGroup";
 
 const AppCard = () => {
     const [apps, setApps] = useState([]);
