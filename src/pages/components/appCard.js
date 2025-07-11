@@ -441,7 +441,7 @@ const AppCard = () => {
                             {/* Instances */}
                             {expandedGroups[groupName] &&
                                 (
-                                    <div className='p-6 space-y-4'>
+                                    <div className="p-4 space-y-3 bg-zinc-800">
                                         {visibleApps.map((app, index) => (
                                             <AppInstance
                                                 key={app.instanceId}

@@ -41,7 +41,7 @@ const ActionsBar = ({
     };
 
     return (
-        <div className="flex gap-2">
+        <div className="flex gap-1 p-3 pt-0">
             {(status === 'online' ? actions.online : actions.offline).map((actionBtn) => (
                 <ActionButton
                     key={actionBtn.action}
@@ -55,9 +55,9 @@ const ActionsBar = ({
             {status === 'online' && index !== undefined && (
                 <Link
                     href={`/logs/${encodeURIComponent(name)}?index=${index}`}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-zinc-700 hover:bg-zinc-600 rounded-lg transition-colors text-white text-sm font-medium"
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-blue-600 hover:bg-blue-700 rounded text-white text-xs font-medium"
                 >
-                    <FontAwesomeIcon icon={faTerminal} className="h-4"/>
+                    <FontAwesomeIcon icon={faTerminal} className="h-3"/>
                     Logs
                 </Link>
             )}

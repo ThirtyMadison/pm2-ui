@@ -15,7 +15,7 @@ const ActionButton = ({
                           className = '',
                           disabled = false,
                       }) => {
-    const baseStyles = 'flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg transition-colors text-white text-sm font-medium';
+    const baseStyles = 'flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-blue-600 hover:bg-blue-700 rounded text-white text-xs font-medium';
     const variantStyles = BUTTON_VARIANTS[variant] || BUTTON_VARIANTS.blue;
 
     return (
@@ -24,7 +24,7 @@ const ActionButton = ({
             onClick={onClick}
             disabled={disabled}
         >
-            {icon && <FontAwesomeIcon icon={icon} className="h-4" />}
+            {icon && <FontAwesomeIcon icon={icon} className="h-3" />}
             {label}
         </button>
     );
