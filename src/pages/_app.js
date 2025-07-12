@@ -5,7 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import './globals.css';
 
 function MyApp({ Component, pageProps }) {
-  const pageTitle = 'PM2 UI';
+  const pageTitle = 'EngToolkit UI';
   const pageDescription = 'PM2 Processes Dashboard';
 
   useEffect(() => {

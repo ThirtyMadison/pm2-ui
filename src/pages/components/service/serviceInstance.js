@@ -1,4 +1,4 @@
-// components/AppInstance.js
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
     faChevronDown,
     faChevronUp,
@@ -6,11 +6,11 @@ import {
     faMemory,
     faMicrochip,
 } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useState } from 'react';
-import ActionsBar from './actionsBar';
+import {useState} from 'react';
+import ActionsBar from '../actions/actionsBar';
+import {toast} from "react-toastify";
 
-const AppInstance = ({app, onAction, index}) => {
+const ServiceInstance = ({app, index, isLoading}) => {
     const [showActions, setShowActions] = useState(false);
 
     const getColorClass = (value, thresholds) => {
@@ -20,12 +20,38 @@ const AppInstance = ({app, onAction, index}) => {
         return 'text-red-500';
     };
 
+    const onAction = async (appName, action) => {
+        try {
+            const response = await fetch('/api/pm2/actions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({appName, action}),
+            });
+
+            if (!response.ok) {
+                throw new Error('PM2 action failed');
+            }
+
+            const result = await response.json();
+            toast.success(result.message);
+        } catch (error) {
+            console.error('Error performing action on app:', error);
+            toast.error('Error performing action on app');
+        }
+    };
+
+    const headerBgColor = app.status === 'online' ? 'bg-zinc-800 ' : 'bg-red-900';
+    const headerBgClass = isLoading ? 'animate-bg-pulse' : headerBgColor;
+    const bodyBgClass = isLoading ? 'animate-bg-pulse' : 'bg-zinc-800';
+
     return (
         <div
-            className={`rounded border transition-colors ${app.status === 'online' ? 'border-zinc-600 hover:border-zinc-500 ' : 'border-red-600 hover:border-red-400'}`}>
+            className={`rounded border transition-colors ${app.status === 'online' || isLoading ? 'border-zinc-600 hover:border-zinc-500 ' : 'border-red-600 hover:border-red-400'}`}>
             {/* Instance Header */}
             <div
-                className={`flex items-center justify-between p-3 border-b  border-zinc-700 ${app.status === 'online' ? 'bg-zinc-800 ' : 'bg-red-900 '}`}>
+                className={`flex items-center justify-between p-3 border-b  border-zinc-700 ${headerBgClass}`}>
                 <div className='flex items-center gap-2'>
                     <div className={`w-2 h-2 rounded-full ${
                         app.status === 'online' ? 'bg-green-500' :
@@ -59,7 +85,7 @@ const AppInstance = ({app, onAction, index}) => {
 
             {/* Metrics Grid - Simplified */}
             <div className='grid grid-cols-3 gap-2 p-3'>
-                <div className='flex items-center gap-2 p-2 bg-zinc-800 rounded-lg'>
+                <div className={`flex items-center gap-2 p-2 rounded-lg ${bodyBgClass}`}>
                     <FontAwesomeIcon
                         icon={faMicrochip}
                         className={`h-3 ${getColorClass(app.cpu, {
@@ -115,4 +141,4 @@ const AppInstance = ({app, onAction, index}) => {
     );
 };
 
-export default AppInstance;
+export default ServiceInstance;

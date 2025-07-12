@@ -1,4 +1,3 @@
-// components/EngToolkitLogs.js
 import {useEffect, useRef, useState} from 'react';
 
 const EngToolkitLogs = ({logs, isLoading}) => {
